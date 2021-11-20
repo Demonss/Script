@@ -201,6 +201,18 @@ function git_install() {
     useradd git
     sed -i 's/\/home\/git:.*$/\/home\/git:\/usr\/bin\/git-shell/g' /etc/passwd
 }
+function nginx_config() {
+	wget https://github.com/Demonss/Script/raw/main/nginx.zip
+	mkdir -p ziptmp
+	unzip -d ziptmp  nginx.zip
+	rm -f nginx.zip
+	rm -f /etc/nginx/nginx.conf
+	rm -f /etc/nginx/conf.d/*
+	mv ziptmp/nginx.conf /etc/nginx/
+	mv ziptmp/* /etc/nginx/conf.d/
+	rm -rf ziptmp
+	ls -alh /etc/nginx/conf.d/	
+}
 menu() {
   echo -e "\t---authored by zhang---"
 
@@ -224,6 +236,8 @@ menu() {
   echo -e "${Green}12.${Font} mysql安装"
   
   echo -e "${Green}13.${Font} git安装"
+  
+  echo -e "${Green}14.${Font} Nginx配置文件下载"
   
   echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
   echo -e "${Green}21.${Font} 执行1-3所有步骤"
@@ -274,6 +288,9 @@ menu() {
     ;;
   13)
     git_install
+    ;;
+  14)
+    nginx_config
     ;;
   21)
     installTools
