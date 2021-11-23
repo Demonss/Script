@@ -97,7 +97,7 @@ function firewall() {
     systemctl stop ufw
     systemctl disable ufw
     ${INS} iptables
-    IPTABLEF=/etc/iptables_rules.v4
+    IPTABLEF=/etc/iptables/rules.v4
   fi
   judge "iptables 安装"
   cat <<EOF>${IPTABLEF}
@@ -314,41 +314,40 @@ function git_install() {
 }
 function nginx_config() {
   wget $githuburl/nginx.zip
-    mkdir -p ziptmp
-    rm -f ziptmp/*
-    unzip -d ziptmp  nginx.zip
-    rm -f nginx.zip
-    read -n1 -p  "是否安装nginx.conf[y/n]?"  answer
-    if echo "$answer" | grep -iq "^y" ;then
-       cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
-       judge "nginx.conf 替换"
-    fi
-    read -n1 -p  "是否安装nextcloud.conf[y/n]?"  answer
-    if echo "$answer" | grep -iq "^y" ;then
-       cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
-       read -p  "请输入域名:"  domm
-       sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
-       judge "nextcloud.conf 替换"
-    fi
-    read -n1 -p  "是否安装80.conf[y/n]?"  answer
-    if echo "$answer" | grep -iq "^y" ;then
-       cat ziptmp/80.conf >/etc/nginx/conf.d/80.conf
-       judge "80conf 替换"
-    fi
-    read -n1 -p  "是否安装worpress配置文件[y/n]?"  answer
-    if echo "$answer" | grep -iq "^y" ;then
-       read -p  "请输入域名:"  domm
-       cat ziptmp/*.xyz.conf >/etc/nginx/conf.d/$domm.conf
-       sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/$domm.conf
-       judge "$domm.conf 替换"
-    fi
-    ls -alh /etc/nginx/conf.d/
-    systemctl restart nginx
-    systemctl status nginx
+  mkdir -p ziptmp
+  rm -f ziptmp/*
+  unzip -d ziptmp  nginx.zip
+  rm -f nginx.zip
+  read -n1 -p  "是否安装nginx.conf[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
+    judge "nginx.conf 替换"
+  fi
+  read -n1 -p  "是否安装nextcloud.conf[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
+    read -p  "请输入域名:"  domm
+    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
+    judge "nextcloud.conf 替换"
+  fi
+  read -n1 -p  "是否安装80.conf[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    cat ziptmp/80.conf >/etc/nginx/conf.d/80.conf
+    judge "80conf 替换"
+  fi
+  read -n1 -p  "是否安装worpress配置文件[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    read -p  "请输入域名:"  domm
+    cat ziptmp/*.xyz.conf >/etc/nginx/conf.d/$domm.conf
+    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/$domm.conf
+    judge "$domm.conf 替换"
+  fi
+  ls -alh /etc/nginx/conf.d/
+  systemctl restart nginx
+  systemctl status nginx
 
 }
 function file_down() {
-
   echo -e "${Green}$githuburl${Font}"
   echo -e "${Green}1.${Font} Centos8_Setup.sh"
   echo -e "${Green}2.${Font} nginx.zip"
@@ -379,31 +378,30 @@ menu() {
   echo -e "${Green}1.${Font} 常用工具包安装"
   echo -e "${Green}2.${Font} ssd_config 配置"
   echo -e "${Green}3.${Font} 关闭FireWall安装iptables并配置规则"
+  
+  echo -e "${Green}4.${Font} BBR开启"
+  
+  echo -e "${Green}5.${Font} NGINX安装"
 
-  echo -e "${Green}4.${Font} php 安装"
-  echo -e "${Green}5.${Font} php-fpm 修改配置"
+  echo -e "${Green}6.${Font} php 安装"
+  echo -e "${Green}7.${Font} php  fpm 修改配置"  
 
-  echo -e "${Green}6.${Font} BBR开启"
-
-  echo -e "${Green}7.${Font} acme 安装"
-  echo -e "${Green}8.${Font} acme 域名"
-
-  echo -e "${Green}9.${Font} NGINX安装"
+  echo -e "${Green}8.${Font} acme 安装"
+  echo -e "${Green}9.${Font} acme 域名"
+  
   echo -e "${Green}10.${Font} NextCloud安装"
+  
   echo -e "${Green}11.${Font} V2fly安装"
-
   echo -e "${Green}12.${Font} mysql安装"
-
   echo -e "${Green}13.${Font} git安装"
-
   echo -e "${Green}14.${Font} Nginx配置文件下载"
 
   echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
   echo -e "${Green}21.${Font} 执行1-3所有步骤"
-  echo -e "${Green}22.${Font} 执行4和5 php安装配置"
+  echo -e "${Green}22.${Font} 执行php安装与配置"
   echo -e "${Green}23.${Font} acme 整个配置"
-  echo -e "${Green}24.${Font} acme升级"
-  echo -e "${Green}25.${Font} 文件下载"
+  echo -e "${Green}24.${Font} acme 升级"
+  echo -e "${Green}25.${Font} github文件下载"
   echo -e "${Green}26.${Font} bench.sh  VPS性能测试"
   echo -e "${Green}27.${Font} 流媒体解锁测试"
   echo -e "${Green}28.${Font} 一键DD"
@@ -423,22 +421,22 @@ menu() {
     firewall
     ;;
   4)
-    php
-    ;;
-  5)
-    php_fpm
-    ;;
-  6)
     BBR
     ;;
+  5)
+    nginx_install
+    ;;
+  6)
+    php
+    ;;
   7)
-    acme_install
+    php_fpm    
     ;;
   8)
-    acme_url
+    acme_install
     ;;
   9)
-    nginx_install
+    acme_url
     ;;
   10)
     nc_install
@@ -492,13 +490,6 @@ menu() {
   40)
     exit 0
     ;;
-  13)
-    DOMAIN=$(cat ${domain_tmp_dir}/domain)
-    nginx_conf="/etc/nginx/conf.d/${DOMAIN}.conf"
-    modify_port
-    restart_all
-    ;;
-
   22)
     tail -f $xray_error_log
     ;;
