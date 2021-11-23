@@ -97,7 +97,7 @@ function firewall() {
     systemctl stop ufw
     systemctl disable ufw
     ${INS} iptables
-    mkdir -p /etc/iptables
+    mkdir /etc/iptables
     IPTABLEF=/etc/iptables/rules.v4
   fi
   judge "iptables 安装"
