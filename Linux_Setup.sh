@@ -124,7 +124,7 @@ EOF
     iptables-restore <${IPTABLEF}
     cat <<EOF>/etc/network/if-pre-up.d/iptables
 #!/bin/sh
-/sbin/iptables-restore </etc/network/if-pre-up.d/iptables
+/sbin/iptables-restore <${IPTABLEF}
 EOF
   chmod +x /etc/network/if-pre-up.d/iptables
   fi
