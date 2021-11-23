@@ -158,12 +158,12 @@ function php_remove() {
 }
 function php() {
   if [[ "${ID}" == "centos" ]]; then
-    PGCMD=rpm -qa
+    PHPINS=$(rpm -qa|grep -c php)
   elif [[ "${ID}" == "debian" ]]; then
-    PGCMD=rpm -qa
+    PHPINS=$(dpkg -l|grep -c php)
   fi 
-
-  if [[$(${PGCMD}|grep -c php) -ge 1]]; then
+  echo $PHPINS
+  if [ $PHPINS -ge 1 ]; then
     read -rp "php已经安装是否重装(y/n)：" answer
       if echo "$answer" | grep -iq "^y" ;then
         php_remove
