@@ -157,7 +157,13 @@ function php_remove() {
   fi
 }
 function php() {
-  if  command -v php; then
+  if [[ "${ID}" == "centos" ]]; then
+    PGCMD=rpm -qa
+  elif [[ "${ID}" == "debian" ]]; then
+    PGCMD=rpm -qa
+  fi 
+
+  if [[$(${PGCMD}|grep -c php) -ge 1]]; then
     read -rp "php已经安装是否重装(y/n)：" answer
       if echo "$answer" | grep -iq "^y" ;then
         php_remove
@@ -181,9 +187,9 @@ php-zip php-process php-bcmath php-gmp php-intl php-gd
     echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
     apt update
     read -rp "请输入PHP 版本:" PHPV
-    ${INS} php${PHPV}
+    ${INS} php${PHPV}-fpm
     judge "php${PHPV} 安装"
-    ${INS} php${PHPV}-{dom,xml,curl,fpm,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
+    ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
     systemctl stop apache2
     systemctl disable apache2
   fi
@@ -197,19 +203,15 @@ function php_fpm() {
     php_fpmcfg=/etc/php/${PHPV}/fpm/pool.d/www.conf
     php_inicfg=/etc/php/${PHPV}/fpm/php.ini
   fi
-    sed -i 's/^.\?env\[HOSTNAME\]/env\[HOSTNAME\]/g' $php_fpmcfg
-    sed -i 's/^.\?env\[PATH\]/env\[PATH\]/g' $php_fpmcfg
-    Para_Modify $php_fpmcfg 'user' 'nginx'
-    Para_Modify $php_fpmcfg 'group' 'nginx'
-    Para_Modify $php_fpmcfg 'listen' '127.0.0.1:9000'
-    Para_Modify $php_fpmcfg 'listen.group' 'nginx'
-    Para_Modify $php_fpmcfg 'listen.owner' 'nginx'
-    cat $php_fpmcfg |grep -v ^#|grep -v ^\;|grep -v ^$
-    chown nginx:nginx /var/lib/php/sessions
-    chown nginx:nginx /var/lib/php/session
-    chown root:nginx /var/lib/php/wsdlcache
-    chown root:nginx /var/lib/php/opcache
-    Para_Modify $php_inicfg 'memory_limit' '512M'
+  sed -i 's/^.\?env\[HOSTNAME\]/env\[HOSTNAME\]/g' $php_fpmcfg
+  sed -i 's/^.\?env\[PATH\]/env\[PATH\]/g' $php_fpmcfg
+  Para_Modify $php_fpmcfg 'user' 'nginx'
+  Para_Modify $php_fpmcfg 'group' 'nginx'
+  Para_Modify $php_fpmcfg 'listen' '127.0.0.1:9000'
+  Para_Modify $php_fpmcfg 'listen.group' 'nginx'
+  Para_Modify $php_fpmcfg 'listen.owner' 'nginx'
+  cat $php_fpmcfg |grep -v ^#|grep -v ^\;|grep -v ^$
+  Para_Modify $php_inicfg 'memory_limit' '512M'
   if [[ "${ID}" == "centos" ]]; then
     systemctl restart php-fpm
     systemctl enable php-fpm
@@ -302,6 +304,10 @@ function nc_install() {
   unzip nextcloud*.zip
   mv nextcloud  /var/www/
   rm -f nextcloud*.zip
+  chown nginx:nginx /var/lib/php/sessions
+  chown nginx:nginx /var/lib/php/session
+  chown root:nginx /var/lib/php/wsdlcache
+  chown root:nginx /var/lib/php/opcache
   chown -R nginx:nginx /var/www/nextcloud
   judge "NextCloud 安装到/var/www/nextcloud"
 }
@@ -321,6 +327,8 @@ function nginx_config() {
   rm -f ziptmp/*
   unzip -d ziptmp  nginx.zip
   rm -f nginx.zip
+  rm /etc/nginx/conf.d/*.conf
+  #rm $(ls -a /etc/nginx/conf.d/* |tr "\n" " ")
   read -n1 -p  "是否安装nginx.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
