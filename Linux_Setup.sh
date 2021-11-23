@@ -184,6 +184,8 @@ php-zip php-process php-bcmath php-gmp php-intl php-gd
     ${INS} php${PHPV}
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,fpm,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
+    systemctl stop apache2
+    systemctl disable apache2
   fi
 }
 function php_fpm() {
