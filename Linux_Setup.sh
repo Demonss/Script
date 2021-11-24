@@ -145,9 +145,9 @@ function installTools() {
 function php_remove() {
   if [[ "${ID}" == "centos" ]]; then
     systemctl stop php-fpm
-	PGPMODULES=$(rpm -qa|grep php|tr "\n"  " ")
+    PGPMODULES=$(rpm -qa|grep php|tr "\n"  " ")
     yum remove -y ${PGPMODULES}
-	judge "${PGPMODULES} 卸载"
+    judge "${PGPMODULES} 卸载"
   elif [[ "${ID}" == "debian" ]]; then
     apt purge -y $(dpkg -l | grep php| awk '{print $2}' |tr "\n" " ")
   fi
@@ -187,7 +187,7 @@ php-zip php-process php-bcmath php-gmp php-intl php-gd
     ${INS} php${PHPV}-fpm
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
-	judge "php${PHPV} 其他模块安装"
+    judge "php${PHPV} 其他模块安装"
   fi
 }
 function php_fpm() {
@@ -235,12 +235,12 @@ function acme_install() {
   rm -f myacme.zip
   if [ -e myacme.conf ]; then
     CF_API=$(grep ^SAVED_CF_Key myacme.conf |tr "\n" " ")
-	echo ${CF_API}>>/root/.acme.sh/account.conf
-	CF_EMAIL=$(grep ^SAVED_CF_Email myacme.conf |tr "\n" " ")
-	echo ${CF_EMAIL}>>/root/.acme.sh/account.conf
-	ACME_E=$(grep acme_Email myacme.conf |awk -F= '{print $2}'|tr "\n" " ")
-	.acme.sh/acme.sh --register-account -m $ACME_E
-	rm myacme.conf
+    echo ${CF_API}>>/root/.acme.sh/account.conf
+    CF_EMAIL=$(grep ^SAVED_CF_Email myacme.conf |tr "\n" " ")
+    echo ${CF_EMAIL}>>/root/.acme.sh/account.conf
+    ACME_E=$(grep acme_Email myacme.conf |awk -F= '{print $2}'|tr "\n" " ")
+    .acme.sh/acme.sh --register-account -m $ACME_E
+    rm myacme.conf
   fi  
 }
 
