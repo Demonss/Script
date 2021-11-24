@@ -65,7 +65,7 @@ function system_check() {
     cert_group="nogroup"
   fi
 
-  $INS dbus
+  #$INS dbus
   # 关闭各类防火墙
   systemctl stop firewalld
   systemctl disable firewalld
@@ -145,13 +145,9 @@ function installTools() {
 function php_remove() {
   if [[ "${ID}" == "centos" ]]; then
     systemctl stop php-fpm
-    yum remove -y php-*
-    if [[ $(rpm -qa|grep -c php) -lt 1 ]]; then
-     judge "php 卸载完毕"
-    else
-     rpm -qa|grep php
-     judge "php 没有卸载完全"
-    fi
+	PGPMODULES=$(rpm -qa|grep php|tr "\n"  " ")
+    yum remove -y ${PGPMODULES}
+	judge "${PGPMODULES} 卸载"
   elif [[ "${ID}" == "debian" ]]; then
     apt purge -y $(dpkg -l | grep php| awk '{print $2}' |tr "\n" " ")
   fi
@@ -162,7 +158,6 @@ function php() {
   elif [[ "${ID}" == "debian" ]]; then
     PHPINS=$(dpkg -l|grep -c php)
   fi 
-  echo $PHPINS
   if [ $PHPINS -ge 1 ]; then
     read -rp "php已经安装是否重装(y/n)：" answer
       if echo "$answer" | grep -iq "^y" ;then
@@ -178,6 +173,8 @@ function php() {
     yum module -y enable php:$PHPV
     ${INS} php
     judge "php 安装"
+    systemctl stop apache2
+    systemctl disable apache2
     ${INS} php-mbstring php-pecl-apcu php-opcache php-json php-mysqlnd \
 php-zip php-process php-bcmath php-gmp php-intl php-gd
     judge "php 其他模块 安装"
@@ -190,8 +187,7 @@ php-zip php-process php-bcmath php-gmp php-intl php-gd
     ${INS} php${PHPV}-fpm
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
-    systemctl stop apache2
-    systemctl disable apache2
+	judge "php${PHPV} 其他模块安装"
   fi
 }
 function php_fpm() {
@@ -230,18 +226,26 @@ function BBR() {
     sysctl -p
 }
 function acme_install() {
-  rm  -rf .acme.sh
-  read -rp "CF_Key:" CF_Keyin
+  rm  -rf .acme.sh  
   curl -L get.acme.sh | bash
   judge "安装 acme"
-  source .bashrc
-  echo "SAVED_CF_Key='${CF_Keyin}'">>/root/.acme.sh/account.conf
-  echo "SAVED_CF_Email='zhangguoping8935@163.com'">>/root/.acme.sh/account.conf
-  .acme.sh/acme.sh --register-account -m zhangguoping8935@gmail.com
+  source .bashrc  
+  wget wget $githuburl/myacme.zip
+  unzip  myacme.zip
+  rm -f myacme.zip
+  if [ -e myacme.conf ]; then
+    CF_API=$(grep ^SAVED_CF_Key myacme.conf |tr "\n" " ")
+	echo ${CF_API}>>/root/.acme.sh/account.conf
+	CF_EMAIL=$(grep ^SAVED_CF_Email myacme.conf |tr "\n" " ")
+	echo ${CF_EMAIL}>>/root/.acme.sh/account.conf
+	ACME_E=$(grep acme_Email myacme.conf |awk -F= '{print $2}'|tr "\n" " ")
+	.acme.sh/acme.sh --register-account -m $ACME_E
+	rm myacme.conf
+  fi  
 }
 
 function acme_url() {
-  read -rp "root domain:" ROOTD
+  read -rp "your domain:" ROOTD
   .acme.sh/acme.sh --issue --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
   .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/cert.pem --key-file /etc/ssl/privkey.key
   cat <<EOF> "${cron_update_file}"
@@ -249,7 +253,7 @@ function acme_url() {
 domain = ${ROOTD}
 systemctl stop nginx &> /dev/null
 sleep 1
-"/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d "\${domain}" -d "*.\${domain}" &> /dev/null
+"/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
 "/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/cert.pem --key-file /etc/ssl/privkey.key &> /dev/null
 sleep 1
 systemctl start nginx &> /dev/null
