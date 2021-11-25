@@ -164,18 +164,18 @@ function module_remove() {
     ;;
   2)
     MODEL_NAMEC="nginx"
-   MODEL_NAMED="nginx"
+    MODEL_NAMED="nginx"
     ;;
   3)
     MODEL_NAMEC="^mysql"
-   MODEL_NAMED=" mysql"
+    MODEL_NAMED=" mysql"
     ;;
   4)
     MODEL_NAMEC="^mariadb"
     MODEL_NAMED=" mariadb"
     ;;
   *)
-    print_error "请输入正确的数字 $menu_num"
+    print_error "请输入正确的数字"
     ;;
   esac
   if [[ "${ID}" == "centos" ]]; then
@@ -207,8 +207,8 @@ function php() {
     judge "php 安装"
     ${INS} php-{mbstring,pecl-apcu,opcache,json,mysqlnd,zip,process,bcmath,gmp,intl,gd}
     judge "php 其他模块 安装"
-	systemctl stop httpd
-	systemctl disable httpd
+    systemctl stop httpd
+    systemctl disable httpd
   elif [[ "${ID}" == "debian" ]]; then
     ${INS} lsb-release apt-transport-https ca-certificates
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
