@@ -171,12 +171,9 @@ function php() {
     yum module list php
     read -rp "请输入PHP 版本:" PHPV
     yum module -y enable php:$PHPV
-    ${INS} php
-    judge "php 安装"
-    systemctl stop apache2
-    systemctl disable apache2
-    ${INS} php-mbstring php-pecl-apcu php-opcache php-json php-mysqlnd \
-php-zip php-process php-bcmath php-gmp php-intl php-gd
+    ${INS} php-fpm
+    judge "php-fpm 安装"
+    ${INS} php-{mbstring,pecl-apcu,opcache,json,mysqlnd,zip,process,bcmath,gmp,intl,gd}
     judge "php 其他模块 安装"
   elif [[ "${ID}" == "debian" ]]; then
     ${INS} lsb-release apt-transport-https ca-certificates
