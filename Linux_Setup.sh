@@ -160,20 +160,19 @@ function module_remove() {
   case $module_num in
   1)
     MODEL_NAMEC="php"
-	MODEL_NAMED="php"
+    MODEL_NAMED="php"
     ;;
   2)
     MODEL_NAMEC="nginx"
-	MODEL_NAMED="nginx"
+   MODEL_NAMED="nginx"
     ;;
   3)
     MODEL_NAMEC="^mysql"
-	MODEL_NAMED=" mysql"
+   MODEL_NAMED=" mysql"
     ;;
   4)
     MODEL_NAMEC="^mariadb"
-	MODEL_NAMED=" mariadb"
-    ;;
+    MODEL_NAMED=" mariadb"
     ;;
   *)
     print_error "请输入正确的数字 $menu_num"
