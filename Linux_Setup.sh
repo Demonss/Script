@@ -43,7 +43,7 @@ function system_check() {
     #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
   elif [[ "${ID}" == "ol" ]]; then
     print_ok "当前系统为 Oracle Linux ${VERSION_ID} ${VERSION}"
-    INS="${INS}"
+    INS="yum install -y"
     print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
     exit 1
     #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
@@ -60,7 +60,6 @@ function system_check() {
     print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
     exit 1
   fi
-
   if [[ $(grep "nogroup" /etc/group) ]]; then
     cert_group="nogroup"
   fi
@@ -152,6 +151,40 @@ function php_remove() {
     apt purge -y $(dpkg -l | grep php| awk '{print $2}' |tr "\n" " ")
   fi
 }
+function module_remove() {
+  echo -e "${Green}1.${Font} 卸载 php"
+  echo -e "${Green}2.${Font} 卸载 nginx"
+  echo -e "${Green}3.${Font} 卸载 mysql"
+  echo -e "${Green}4.${Font} 卸载 mariaDB"
+  read -rp "请输入模块序号或者名字：" module_num
+  case $module_num in
+  1)
+    MODEL_NAMEC="php"
+	MODEL_NAMED="php"
+    ;;
+  2)
+    MODEL_NAMEC="nginx"
+	MODEL_NAMED="nginx"
+    ;;
+  3)
+    MODEL_NAMEC="^mysql"
+	MODEL_NAMED=" mysql"
+    ;;
+  4)
+    MODEL_NAMEC="^mariadb"
+	MODEL_NAMED=" mariadb"
+    ;;
+    ;;
+  *)
+    print_error "请输入正确的数字 $menu_num"
+    ;;
+  esac
+  if [[ "${ID}" == "centos" ]]; then
+    yum autoremove -y $(rpm -qa |grep "$MODEL_NAMEC"|tr "\n" " ")
+  elif [[ "${ID}" == "debian" ]]; then
+    apt purge -y $(dpkg -l |grep "$MODEL_NAMED"|awk '{ print $2 }'|tr "\n" " ")
+  fi  
+}
 function php() {
   if [[ "${ID}" == "centos" ]]; then
     PHPINS=$(rpm -qa|grep -c php)
@@ -161,7 +194,7 @@ function php() {
   if [ $PHPINS -ge 1 ]; then
     read -rp "php已经安装是否重装(y/n)：" answer
       if echo "$answer" | grep -iq "^y" ;then
-        php_remove
+        module_remove "php"
       else
         return
       fi
@@ -171,20 +204,24 @@ function php() {
     yum module list php
     read -rp "请输入PHP 版本:" PHPV
     yum module -y enable php:$PHPV
-    ${INS} php-fpm
-    judge "php-fpm 安装"
+    ${INS} php
+    judge "php 安装"
     ${INS} php-{mbstring,pecl-apcu,opcache,json,mysqlnd,zip,process,bcmath,gmp,intl,gd}
     judge "php 其他模块 安装"
+	systemctl stop httpd
+	systemctl disable httpd
   elif [[ "${ID}" == "debian" ]]; then
     ${INS} lsb-release apt-transport-https ca-certificates
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
     echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
     apt update
     read -rp "请输入PHP 版本:" PHPV
-    ${INS} php${PHPV}-fpm
+    ${INS} php${PHPV} php${PHPV}-fpm
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
     judge "php${PHPV} 其他模块安装"
+    systemctl stop apache2
+    systemctl disable apache2
   fi
 }
 function php_fpm() {
@@ -419,7 +456,7 @@ menu() {
   echo -e "${Green}28.${Font} 一键DD"
 
   echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
-  echo -e "${Green}31.${Font} php卸载"
+  echo -e "${Green}31.${Font} 模块卸载"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -497,7 +534,7 @@ menu() {
     bash checkNF.sh
     ;;
   31)
-    php_remove
+    module_remove
     ;;
   40)
     exit 0
