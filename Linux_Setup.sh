@@ -1,5 +1,6 @@
 #!/bin/sh
 # 字体颜色配置
+#bash <(curl -L https://github.com/Demonss/Script/raw/main/Linux_Setup.sh)
 Green="\033[32m"
 Red="\033[31m"
 Yellow="\033[33m"
@@ -216,9 +217,9 @@ function php() {
       echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
       apt update
       read -rp "请输入PHP 版本:" PHPV
-	else
+    else
       PHPV=7.4
-	fi
+    fi
     ${INS} php${PHPV} php${PHPV}-fpm
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
@@ -253,6 +254,10 @@ function php_fpm() {
     systemctl restart php${PHPV}-fpm
     systemctl enable php${PHPV}-fpm
     systemctl status php${PHPV}-fpm
+
+  fi
+  if [[ -e /etc/nginx/conf.d/php-fpm.conf ]]; then
+    rm -f /etc/nginx/conf.d/php-fpm.conf
   fi
 }
 function BBR() {
@@ -330,6 +335,12 @@ function nginx_install() {
   fi
   ${INS} nginx
   judge "nginx 安装"
+  if [[ -e /etc/nginx/conf.d/php-fpm.conf ]]; then
+    rm -f /etc/nginx/conf.d/php-fpm.conf
+  fi
+  if [[ -e /etc/nginx/conf.d/default.conf ]]; then
+    rm -f /etc/nginx/conf.d/default.conf
+  fi
   systemctl enable nginx
   systemctl restart nginx
   systemctl status nginx
@@ -345,10 +356,18 @@ function nc_install() {
   unzip nextcloud*.zip
   mv nextcloud  /var/www/
   rm -f nextcloud*.zip
-  chown nginx:nginx /var/lib/php/sessions
-  chown nginx:nginx /var/lib/php/session
-  chown root:nginx /var/lib/php/wsdlcache
-  chown root:nginx /var/lib/php/opcache
+  if [[ -d /var/lib/php/sessions ]]; then
+    chown nginx:nginx /var/lib/php/sessions
+  fi
+  if [[ -d /var/lib/php/session ]]; then
+    chown nginx:nginx /var/lib/php/session
+  fi
+  if [[ -d /var/lib/php/wsdlcache ]]; then
+    chown root:nginx /var/lib/php/wsdlcache
+  fi
+  if [[ -d /var/lib/php/opcache ]]; then
+    chown root:nginx /var/lib/php/opcache
+  fi
   chown -R nginx:nginx /var/www/nextcloud
   judge "NextCloud 安装到/var/www/nextcloud"
 }
