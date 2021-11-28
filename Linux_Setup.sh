@@ -210,11 +210,15 @@ function php() {
     systemctl stop httpd
     systemctl disable httpd
   elif [[ "${ID}" == "debian" ]]; then
-    ${INS} lsb-release apt-transport-https ca-certificates
-    wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
-    apt update
-    read -rp "请输入PHP 版本:" PHPV
+    if [[ ${VERSION_ID} -le 10 ]]; then
+      ${INS} lsb-release apt-transport-https ca-certificates
+      wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+      echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
+      apt update
+      read -rp "请输入PHP 版本:" PHPV
+	else
+      PHPV=7.4
+	fi
     ${INS} php${PHPV} php${PHPV}-fpm
     judge "php${PHPV} 安装"
     ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
