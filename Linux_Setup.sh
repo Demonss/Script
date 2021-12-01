@@ -183,14 +183,14 @@ function module_remove() {
     yum autoremove -y $(rpm -qa |grep "$MODEL_NAMEC"|tr "\n" " ")
   elif [[ "${ID}" == "debian" ]]; then
     apt purge -y $(dpkg -l |grep "$MODEL_NAMED"|awk '{ print $2 }'|tr "\n" " ")
-  fi  
+  fi
 }
 function php() {
   if [[ "${ID}" == "centos" ]]; then
     PHPINS=$(rpm -qa|grep -c php)
   elif [[ "${ID}" == "debian" ]]; then
     PHPINS=$(dpkg -l|grep -c php)
-  fi 
+  fi
   if [ $PHPINS -ge 1 ]; then
     read -rp "php已经安装是否重装(y/n)：" answer
       if echo "$answer" | grep -iq "^y" ;then
@@ -272,10 +272,10 @@ function BBR() {
     sysctl -p
 }
 function acme_install() {
-  rm  -rf .acme.sh  
+  rm  -rf .acme.sh
   curl -L get.acme.sh | bash
   judge "安装 acme"
-  source .bashrc  
+  source .bashrc
   wget wget $githuburl/myacme.zip
   unzip  myacme.zip
   rm -f myacme.zip
@@ -287,7 +287,7 @@ function acme_install() {
     ACME_E=$(grep acme_Email myacme.conf |awk -F= '{print $2}'|tr "\n" " ")
     .acme.sh/acme.sh --register-account -m $ACME_E
     rm myacme.conf
-  fi  
+  fi
 }
 
 function acme_url() {
@@ -380,6 +380,82 @@ function mysql_install() {
   judge "mysql 安装"
   systemctl restart mysqld && systemctl enable  mysqld
 }
+function mariadb_install() {
+  if [[ "${ID}" == "debian" ]]; then
+    ${INS} mariadb-server mariadb-client
+    judge "mariadb-server mariadb-client 安装"
+    mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'ping8935'"
+  else
+    print_error "mariadb 仅仅支持debian"
+    return
+  fi
+
+
+  systemctl restart mariadb && systemctl enable  mariadb
+}
+function mariadb_conf() {
+  echo -e "${Green}1.${Font} 修改root密码"
+  echo -e "${Green}2.${Font} 增加一个数据库"
+  echo -e "${Green}3.${Font} 数据库备份"
+  echo -e "${Green}4.${Font} 数据库恢复"
+  read -rp "请输入：" choose_num
+  case $choose_num in
+  1)
+    read -rp "请输入新密码：" PASSWDROOT
+    mysql -uroot -p -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${PASSWDROOT}'"
+    echo "export PASSWDROOT=${PASSWDROOT}">/etc/profile.d/mysqladdpd.sh
+    ;;
+  2)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    read -rp "请依次输入：数据库名称 用户名 用户密码:" dbname username userpass
+    if [ -z "$dbname" ] || [ -z "$username" ] || [ -z "$userpass" ] ; then
+      print_error "请输入正确：数据库名称 用户名 用户密码"
+      exit 1
+    fi
+    echo "DB_NAME=$dbname">>~/$dbname
+    echo "DB_USER=$username">>~/$dbname
+    echo "DB_PASSWORD=$userpass">>~/$dbname
+    mysql -uroot -p${PASSWDROOT} -e "CREATE DATABASE ${dbname} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+    echo "Creating new user..."
+    mysql -uroot -p${PASSWDROOT} -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpass}';"
+    mysql -uroot -p${PASSWDROOT} -e "GRANT ALL PRIVILEGES ON ${dbname}.* TO '${username}'@'localhost';"
+    mysql -uroot -p${PASSWDROOT} -e "FLUSH PRIVILEGES;"
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    echo "Finished"
+    ;;
+  3)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    read -rp "请输入备份数据库名称：" dbname
+    dumpdate=$(date '+%Y%m%d-%H%M%S')
+    mysqldump -uroot -p${PASSWDROOT} -e "${dbname}">~/${dbname}_${dumpdate}.sql
+    ls -alh ~
+    ;;
+  4)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    ls ~
+    sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
+    read -rp "请输入恢复数据库名称：" dbname
+    mysql -uroot -p${PASSWDROOT} $dbname <~/$sqlname
+    mysql -uroot -p${PASSWDROOT} -e "show tables from $dbname;"
+    ;;
+  *)
+    print_error "请输入正确的数字"
+    ;;
+  esac
+
+  systemctl restart mariadb
+}
 function git_install() {
   ${INS} git
   useradd git
@@ -453,23 +529,24 @@ menu() {
   echo -e "${Green}1.${Font} 常用工具包安装"
   echo -e "${Green}2.${Font} ssd_config 配置"
   echo -e "${Green}3.${Font} 关闭FireWall安装iptables并配置规则"
-  
+
   echo -e "${Green}4.${Font} BBR开启"
-  
+
   echo -e "${Green}5.${Font} NGINX安装"
 
   echo -e "${Green}6.${Font} php 安装"
-  echo -e "${Green}7.${Font} php  fpm 修改配置"  
+  echo -e "${Green}7.${Font} php  fpm 修改配置"
 
   echo -e "${Green}8.${Font} acme 安装"
   echo -e "${Green}9.${Font} acme 域名"
-  
+
   echo -e "${Green}10.${Font} NextCloud安装"
-  
+
   echo -e "${Green}11.${Font} V2fly安装"
   echo -e "${Green}12.${Font} mysql安装"
   echo -e "${Green}13.${Font} git安装"
   echo -e "${Green}14.${Font} Nginx配置文件下载"
+  echo -e "${Green}15.${Font} MariaDB安装"
 
   echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
   echo -e "${Green}21.${Font} 执行1-3所有步骤"
@@ -480,6 +557,7 @@ menu() {
   echo -e "${Green}26.${Font} bench.sh  VPS性能测试"
   echo -e "${Green}27.${Font} 流媒体解锁测试"
   echo -e "${Green}28.${Font} 一键DD"
+  echo -e "${Green}29.${Font} MariaDB configure"
 
   echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
   echo -e "${Green}31.${Font} 模块卸载"
@@ -505,7 +583,7 @@ menu() {
     php
     ;;
   7)
-    php_fpm    
+    php_fpm
     ;;
   8)
     acme_install
@@ -527,6 +605,9 @@ menu() {
     ;;
   14)
     nginx_config
+    ;;
+  15)
+    mariadb_install
     ;;
   21)
     installTools
@@ -559,21 +640,14 @@ menu() {
     wget $githuburl/InstallNET.sh
     bash checkNF.sh
     ;;
+  29)
+    mariadb_conf
+    ;;
   31)
     module_remove
     ;;
   40)
     exit 0
-    ;;
-  22)
-    tail -f $xray_error_log
-    ;;
-  23)
-    if [[ -f $xray_conf_dir/config.json ]]; then
-      basic_ws_information
-    else
-      print_error "xray 配置文件不存在"
-    fi
     ;;
   *)
     print_error "请输入正确的数字 $menu_num"
