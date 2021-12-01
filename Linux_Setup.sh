@@ -384,7 +384,6 @@ function mariadb_install() {
   if [[ "${ID}" == "debian" ]]; then
     ${INS} mariadb-server mariadb-client
     judge "mariadb-server mariadb-client 安装"
-    mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'ping8935'"
   else
     print_error "mariadb 仅仅支持debian"
     return
