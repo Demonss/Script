@@ -355,11 +355,15 @@ function v2ray_install() {
   judge "v2ray 安装"
 }
 function nc_install() {
+  echo "https://nextcloud.com/install/#instructions-server"
   read -rp "请输入NextCloud 链接:" NEXTCLOUDURL
   wget $NEXTCLOUDURL
-  unzip nextcloud*.zip
+  nczip=$(basename "$NEXTCLOUDURL")
+  echo $nczip
+  unzip $nczip
+  rm -f $nczip
   mv nextcloud  /var/www/
-  rm -f nextcloud*.zip
+  
   if [[ -d /var/lib/php/sessions ]]; then
     chown nginx:nginx /var/lib/php/sessions
   fi
@@ -374,6 +378,26 @@ function nc_install() {
   fi
   chown -R nginx:nginx /var/www/nextcloud
   judge "NextCloud 安装到/var/www/nextcloud"
+}
+function wp_installupdate() {
+  wpurl=https://wordpress.org/latest.tar.gz
+  wget $wpurl
+  wpzip=$(basename "$wpurl")
+  tar -xzvf $wpzip
+  rm -f $wpzip
+  chown -R nginx:nginx wordpress
+  if [[ -d /var/www/wordpress ]]; then
+    echo "/var/www/wordpress 存在升级.................."
+    rm -rf /var/www/wordpress/wp-admin /var/www/wordpress/wp-includes
+    mv wordpress/wp-admin /var/www/wordpress
+    mv wordpress/wp-includes /var/www/wordpress
+    mv -f wordpress/*.php /var/www/wordpress
+  else
+    echo "/var/www/wordpress 不存在 进行安装.................."
+    mv wordpress /var/www/
+  fi
+  ls -alh /var/www/wordpress
+  judge "Wordpress 升级/安装"
 }
 function mysql_install() {
   ${INS} mysql mysql-server
@@ -546,6 +570,7 @@ menu() {
   echo -e "${Green}13.${Font} git安装"
   echo -e "${Green}14.${Font} Nginx配置文件下载"
   echo -e "${Green}15.${Font} MariaDB安装"
+  echo -e "${Green}16.${Font} Wordpress安装/升级"
 
   echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
   echo -e "${Green}21.${Font} 执行1-3所有步骤"
@@ -607,6 +632,9 @@ menu() {
     ;;
   15)
     mariadb_install
+    ;;
+  16)
+    wp_installupdate
     ;;
   21)
     installTools
