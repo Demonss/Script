@@ -526,22 +526,40 @@ function file_down() {
   echo -e "${Green}1.${Font} Centos8_Setup.sh"
   echo -e "${Green}2.${Font} nginx.zip"
   echo -e "${Green}3.${Font} besttrace"
+  echo -e "${Green}4.${Font} besttrace"
   read -rp "请输入：" choose_num
   case $choose_num in
   1)
     wget $githuburl/Centos8_Setup.sh
-  ;;
+    ;;
   2)
     wget $githuburl/nginx.zip
-  ;;
+    ;;
   3)
     wget $githuburl/besttrace
     chmod +x besttrace
-  ;;
+    ;;
+  4)
+    wget $githuburl/wp-fastest-cache-premium_1.6.2.zip
+    ;;
   *)
     wget $githuburl/$choose_num
     ;;
   esac
+
+}
+function fastest_cache_premium() {
+
+  if [[ -d /var/www/wordpress ]]; then
+    rm -r wp-fastest-cache-premium*.zip
+    wget $githuburl/wp-fastest-cache-premium_1.6.2.zip
+    unzip wp-fastest-cache-premium_1.6.2.zip
+    rm -rf  /var/www/wordpress/wp-content/plugins/wp-fastest-cache-premium
+	mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins	
+  else
+    print_error "WordPress 未安装!!!!!!!!!!!!"
+    exit 1
+  fi
 
 }
 menu() {
@@ -582,6 +600,7 @@ menu() {
   echo -e "${Green}27.${Font} 流媒体解锁测试"
   echo -e "${Green}28.${Font} 一键DD"
   echo -e "${Green}29.${Font} MariaDB configure"
+  echo -e "${Green}30.${Font} wp-fastest-cache-premium"
 
   echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
   echo -e "${Green}31.${Font} 模块卸载"
@@ -669,6 +688,9 @@ menu() {
     ;;
   29)
     mariadb_conf
+    ;;
+  30)	
+	fastest_cache_premium
     ;;
   31)
     module_remove
