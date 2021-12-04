@@ -362,6 +362,7 @@ function nc_install() {
   echo $nczip
   unzip $nczip
   rm -f $nczip
+  mkdir -p /var/www/
   mv nextcloud  /var/www/
   
   if [[ -d /var/lib/php/sessions ]]; then
@@ -393,6 +394,7 @@ function wp_installupdate() {
     mv wordpress/wp-includes /var/www/wordpress
     mv -f wordpress/*.php /var/www/wordpress
   else
+    mkdir -p /var/www
     echo "/var/www/wordpress 不存在 进行安装.................."
     mv wordpress /var/www/
   fi
@@ -412,8 +414,6 @@ function mariadb_install() {
     print_error "mariadb 仅仅支持debian"
     return
   fi
-
-
   systemctl restart mariadb && systemctl enable  mariadb
 }
 function mariadb_conf() {
@@ -556,6 +556,7 @@ function fastest_cache_premium() {
     unzip wp-fastest-cache-premium_1.6.2.zip
     rm -rf  /var/www/wordpress/wp-content/plugins/wp-fastest-cache-premium
 	mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins	
+	judge "wp-fastest-cache-premium 安装"
   else
     print_error "WordPress 未安装!!!!!!!!!!!!"
     exit 1
