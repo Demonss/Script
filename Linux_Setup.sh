@@ -690,7 +690,7 @@ menu() {
     mariadb_conf
     ;;
   30)	
-	fastest_cache_premium
+    fastest_cache_premium
     ;;
   31)
     module_remove
