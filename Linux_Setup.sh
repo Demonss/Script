@@ -491,35 +491,33 @@ function nginx_config() {
   unzip -d ziptmp  nginx.zip
   rm -f nginx.zip
   rm /etc/nginx/conf.d/*.conf
-  #rm $(ls -a /etc/nginx/conf.d/* |tr "\n" " ")
-  read -n1 -p  "是否安装nginx.conf[y/n]?"  answer
+  read -rp  "是否安装nginx.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
     judge "nginx.conf 替换"
   fi
-  read -n1 -p  "是否安装nextcloud.conf[y/n]?"  answer
+  read -rp  "是否安装nextcloud.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
     read -p  "请输入域名:"  domm
     sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
     judge "nextcloud.conf 替换"
   fi
-  read -n1 -p  "是否安装80.conf[y/n]?"  answer
+  read -rp  "是否安装80.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/80.conf >/etc/nginx/conf.d/80.conf
     judge "80conf 替换"
   fi
-  read -n1 -p  "是否安装worpress配置文件[y/n]?"  answer
+  read -rp  "是否安装worpress配置文件[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
-    read -p  "请输入域名:"  domm
-    cat ziptmp/*.xyz.conf >/etc/nginx/conf.d/$domm.conf
-    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/$domm.conf
+    read -rp  "请输入域名:"  domm
+    cat ziptmp/wordpress.conf >/etc/nginx/conf.d/${domm}.conf
+    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/${domm}.conf
     judge "$domm.conf 替换"
   fi
   ls -alh /etc/nginx/conf.d/
   systemctl restart nginx
   systemctl status nginx
-
 }
 function file_down() {
   echo -e "${Green}$githuburl${Font}"
