@@ -393,6 +393,7 @@ function wp_installupdate() {
     mv wordpress/wp-admin /var/www/wordpress
     mv wordpress/wp-includes /var/www/wordpress
     mv -f wordpress/*.php /var/www/wordpress
+    rm -rf wordpress
   else
     mkdir -p /var/www
     echo "/var/www/wordpress 不存在 进行安装.................."
@@ -438,9 +439,10 @@ function mariadb_conf() {
       print_error "请输入正确：数据库名称 用户名 用户密码"
       exit 1
     fi
-    echo "DB_NAME=$dbname">>~/$dbname
-    echo "DB_USER=$username">>~/$dbname
-    echo "DB_PASSWORD=$userpass">>~/$dbname
+    mkdir -p /etc/mysqlpasswd
+    echo "DB_NAME=$dbname">>/etc/mysqlpasswd/$dbname
+    echo "DB_USER=$username">>/etc/mysqlpasswd/$dbname
+    echo "DB_PASSWORD=$userpass">>/etc/mysqlpasswd/$dbname
     mysql -uroot -p${PASSWDROOT} -e "CREATE DATABASE ${dbname} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
     echo "Creating new user..."
     mysql -uroot -p${PASSWDROOT} -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpass}';"
