@@ -276,7 +276,7 @@ function acme_install() {
   curl -L get.acme.sh | bash
   judge "安装 acme"
   source .bashrc
-  wget wget $githuburl/myacme.zip
+  wget wget $githuburl/res/myacme.zip
   unzip  myacme.zip
   rm -f myacme.zip
   if [ -e myacme.conf ]; then
@@ -494,7 +494,7 @@ function git_install() {
   sed -i 's/\/home\/git:.*$/\/home\/git:\/usr\/bin\/git-shell/g' /etc/passwd
 }
 function nginx_config() {
-  wget $githuburl/nginx.zip
+  wget $githuburl/res/nginx.zip
   mkdir -p ziptmp
   rm -f ziptmp/*
   unzip -d ziptmp  nginx.zip
@@ -539,21 +539,21 @@ function file_down() {
   echo -e "${Green}1.${Font} Centos8_Setup.sh"
   echo -e "${Green}2.${Font} nginx.zip"
   echo -e "${Green}3.${Font} besttrace"
-  echo -e "${Green}4.${Font} besttrace"
+  echo -e "${Green}4.${Font} wp-fastest-cache-premium"
   read -rp "请输入：" choose_num
   case $choose_num in
   1)
     wget $githuburl/Centos8_Setup.sh
     ;;
   2)
-    wget $githuburl/nginx.zip
+    wget $githuburl/res/nginx.zip
     ;;
   3)
-    wget $githuburl/besttrace
+    wget $githuburl/res/besttrace
     chmod +x besttrace
     ;;
   4)
-    wget $githuburl/wp-fastest-cache-premium_1.6.2.zip
+    wget $githuburl/res/wp-fastest-cache-premium_1.6.2.zip
     ;;
   *)
     wget $githuburl/$choose_num
@@ -565,7 +565,7 @@ function fastest_cache_premium() {
 
   if [[ -d /var/www/wordpress ]]; then
     rm -r wp-fastest-cache-premium*.zip
-    wget $githuburl/wp-fastest-cache-premium_1.6.2.zip
+    wget $githuburl/res/wp-fastest-cache-premium_1.6.2.zip
     unzip wp-fastest-cache-premium_1.6.2.zip
     rm -rf  /var/www/wordpress/wp-content/plugins/wp-fastest-cache-premium
     mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins    
