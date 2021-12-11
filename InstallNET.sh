@@ -1,786 +1,715 @@
-#!/bin/bash
+#!/bin/sh
+# 字体颜色配置
+#bash <(curl -L https://github.com/Demonss/Script/raw/main/Linux_Setup.sh)
+Green="\033[32m"
+Red="\033[31m"
+Yellow="\033[33m"
+Blue="\033[36m"
+Font="\033[0m"
+GreenBG="\033[42;37m"
+RedBG="\033[41;37m"
+OK="${Green}[OK]${Font}"
+ERROR="${Red}[ERROR]${Font}"
+cron_update_file="/usr/bin/cron_update.sh"
+githuburl=https://github.com/Demonss/Script/raw/main
 
-## License: GPL
-## It can reinstall Debian, Ubuntu, CentOS system with network.
-## Default root password: MoeClub.org
-## Blog: https://moeclub.org
-## Written By MoeClub.org
-
-export tmpVER=''
-export tmpDIST=''
-export tmpURL=''
-export tmpWORD=''
-export tmpMirror=''
-export ipAddr=''
-export ipMask=''
-export ipGate=''
-export ipDNS='8.8.8.8'
-export IncDisk='default'
-export interface=''
-export interfaceSelect=''
-export Relese=''
-export sshPORT='22'
-export ddMode='0'
-export setNet='0'
-export setRDP='0'
-export setIPv6='0'
-export isMirror='0'
-export FindDists='0'
-export loaderMode='0'
-export IncFirmware='0'
-export SpikCheckDIST='0'
-export setInterfaceName='0'
-export UNKNOWHW='0'
-export UNVER='6.4'
-export GRUBDIR=''
-export GRUBFILE=''
-export GRUBVER=''
-export VER=''
-export setCMD=''
-
-while [[ $# -ge 1 ]]; do
-  case $1 in
-    -v|--ver)
-      shift
-      tmpVER="$1"
-      shift
-      ;;
-    -d|--debian)
-      shift
-      Relese='Debian'
-      tmpDIST="$1"
-      shift
-      ;;
-    -u|--ubuntu)
-      shift
-      Relese='Ubuntu'
-      tmpDIST="$1"
-      shift
-      ;;
-    -c|--centos)
-      shift
-      Relese='CentOS'
-      tmpDIST="$1"
-      shift
-      ;;
-    -dd|--image)
-      shift
-      ddMode='1'
-      tmpURL="$1"
-      shift
-      ;;
-    -p|--password)
-      shift
-      tmpWORD="$1"
-      shift
-      ;;
-    -i|--interface)
-      shift
-      interfaceSelect="$1"
-      shift
-      ;;
-    --ip-addr)
-      shift
-      ipAddr="$1"
-      shift
-      ;;
-    --ip-mask)
-      shift
-      ipMask="$1"
-      shift
-      ;;
-    --ip-gate)
-      shift
-      ipGate="$1"
-      shift
-      ;;
-    --ip-dns)
-      shift
-      ipDNS="$1"
-      shift
-      ;;
-    --dev-net)
-      shift
-      setInterfaceName='1'
-      ;;
-    --loader)
-      shift
-      loaderMode='1'
-      ;;
-    -apt|-yum|--mirror)
-      shift
-      isMirror='1'
-      tmpMirror="$1"
-      shift
-      ;;
-    -rdp)
-      shift
-      setRDP='1'
-      WinRemote="$1"
-      shift
-      ;;
-    -cmd)
-      shift
-      setCMD="$1"
-      shift
-      ;;
-    -firmware)
-      shift
-      IncFirmware="1"
-      ;;
-    -port)
-      shift
-      sshPORT="$1"
-      shift
-      ;;
-    --noipv6)
-      shift
-      setIPv6='1'
-      ;;
-    -a|--auto|-m|--manual|-ssl)
-      shift
-      ;;
-    *)
-      if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
-      echo -ne " Usage:\n\tbash $(basename $0)\t-d/--debian [\033[33m\033[04mdists-name\033[0m]\n\t\t\t\t-u/--ubuntu [\033[04mdists-name\033[0m]\n\t\t\t\t-c/--centos [\033[04mdists-name\033[0m]\n\t\t\t\t-v/--ver [32/i386|64/\033[33m\033[04mamd64\033[0m] [\033[33m\033[04mdists-verison\033[0m]\n\t\t\t\t--ip-addr/--ip-gate/--ip-mask\n\t\t\t\t-apt/-yum/--mirror\n\t\t\t\t-dd/--image\n\t\t\t\t-p [linux password]\n\t\t\t\t-port [linux ssh port]\n"
-      exit 1;
-      ;;
-    esac
-  done
-
-[[ "$EUID" -ne '0' ]] && echo "Error:This script must be run as root!" && exit 1;
-
-function dependence(){
-  Full='0';
-  for BIN_DEP in `echo "$1" |sed 's/,/\n/g'`
-    do
-      if [[ -n "$BIN_DEP" ]]; then
-        Found='0';
-        for BIN_PATH in `echo "$PATH" |sed 's/:/\n/g'`
-          do
-            ls $BIN_PATH/$BIN_DEP >/dev/null 2>&1;
-            if [ $? == '0' ]; then
-              Found='1';
-              break;
-            fi
-          done
-        if [ "$Found" == '1' ]; then
-          echo -en "[\033[32mok\033[0m]\t";
-        else
-          Full='1';
-          echo -en "[\033[31mNot Install\033[0m]";
-        fi
-        echo -en "\t$BIN_DEP\n";
-      fi
-    done
-  if [ "$Full" == '1' ]; then
-    echo -ne "\n\033[31mError! \033[0mPlease use '\033[33mapt-get\033[0m' or '\033[33myum\033[0m' install it.\n\n\n"
-    exit 1;
-  fi
+function print_ok() {
+  echo -e "${OK} ${Blue} $1 ${Font}"
 }
-
-function selectMirror(){
-  [ $# -ge 3 ] || exit 1
-  Relese=$(echo "$1" |sed -r 's/(.*)/\L\1/')
-  DIST=$(echo "$2" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
-  VER=$(echo "$3" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
-  New=$(echo "$4" |sed 's/\ //g')
-  [ -n "$Relese" ] && [ -n "$DIST" ] && [ -n "$VER" ] || exit 1
-  if [ "$Relese" == "debian" ] || [ "$Relese" == "ubuntu" ]; then
-    [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
-    TEMP="SUB_MIRROR/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${Relese}-installer/${VER}/initrd.gz"
-  elif [ "$Relese" == "centos" ]; then
-    TEMP="SUB_MIRROR/${DIST}/os/${VER}/isolinux/initrd.img"
-  fi
-  [ -n "$TEMP" ] || exit 1
-  mirrorStatus=0
-  declare -A MirrorBackup
-  MirrorBackup=(["debian0"]="" ["debian1"]="http://deb.debian.org/debian" ["debian2"]="http://archive.debian.org/debian" ["ubuntu0"]="" ["ubuntu1"]="http://archive.ubuntu.com/ubuntu" ["ubuntu2"]="http://ports.ubuntu.com" ["centos0"]="" ["centos1"]="http://mirror.centos.org/centos" ["centos2"]="http://vault.centos.org")
-  echo "$New" |grep -q '^http://\|^https://\|^ftp://' && MirrorBackup[${Relese}0]="$New"
-  for mirror in $(echo "${!MirrorBackup[@]}" |sed 's/\ /\n/g' |sort -n |grep "^$Relese")
-    do
-      Current="${MirrorBackup[$mirror]}"
-      [ -n "$Current" ] || continue
-      MirrorURL=`echo "$TEMP" |sed "s#SUB_MIRROR#${Current}#g"`
-      wget --no-check-certificate --spider --timeout=3 -o /dev/null "$MirrorURL"
-      [ $? -eq 0 ] && mirrorStatus=1 && break
-    done
-  [ $mirrorStatus -eq 1 ] && echo "$Current" || exit 1
+function print_error() {
+  echo -e "${ERROR} ${RedBG} $1 ${Font}"
 }
-
-function netmask() {
-  n="${1:-32}"
-  b=""
-  m=""
-  for((i=0;i<32;i++)){
-    [ $i -lt $n ] && b="${b}1" || b="${b}0"
-  }
-  for((i=0;i<4;i++)){
-    s=`echo "$b"|cut -c$[$[$i*8]+1]-$[$[$i+1]*8]`
-    [ "$m" == "" ] && m="$((2#${s}))" || m="${m}.$((2#${s}))"
-  }
-  echo "$m"
-}
-
-function getInterface(){
-  interface=""
-  Interfaces=`cat /proc/net/dev |grep ':' |cut -d':' -f1 |sed 's/\s//g' |grep -iv '^lo\|^sit\|^stf\|^gif\|^dummy\|^vmnet\|^vir\|^gre\|^ipip\|^ppp\|^bond\|^tun\|^tap\|^ip6gre\|^ip6tnl\|^teql\|^ocserv\|^vpn'`
-  defaultRoute=`ip route show default |grep "^default"`
-  for item in `echo "$Interfaces"`
-    do
-      [ -n "$item" ] || continue
-      echo "$defaultRoute" |grep -q "$item"
-      [ $? -eq 0 ] && interface="$item" && break
-    done
-  echo "$interface"
-}
-
-function getDisk(){
-  disks=`lsblk | sed 's/[[:space:]]*$//g' |grep "disk$" |cut -d' ' -f1 |grep -v "fd[0-9]*\|sr[0-9]*" |head -n1`
-  [ -n "$disks" ] || echo ""
-  echo "$disks" |grep -q "/dev"
-  [ $? -eq 0 ] && echo "$disks" || echo "/dev/$disks"
-}
-
-function diskType(){
-  echo `udevadm info --query all "$1" 2>/dev/null |grep 'ID_PART_TABLE_TYPE' |cut -d'=' -f2`
-}
-
-function getGrub(){
-  Boot="${1:-/boot}"
-  folder=`find "$Boot" -type d -name "grub*" 2>/dev/null |head -n1`
-  [ -n "$folder" ] || return
-  fileName=`ls -1 "$folder" 2>/dev/null |grep '^grub.conf$\|^grub.cfg$'`
-  if [ -z "$fileName" ]; then
-    ls -1 "$folder" 2>/dev/null |grep -q '^grubenv$'
-    [ $? -eq 0 ] || return
-    folder=`find "$Boot" -type f -name "grubenv" 2>/dev/null |xargs dirname |grep -v "^$folder" |head -n1`
-    [ -n "$folder" ] || return
-    fileName=`ls -1 "$folder" 2>/dev/null |grep '^grub.conf$\|^grub.cfg$'`
-  fi
-  [ -n "$fileName" ] || return
-  [ "$fileName" == "grub.cfg" ] && ver="0" || ver="1"
-  echo "${folder}:${fileName}:${ver}"
-}
-
-function lowMem(){
-  mem=`grep "^MemTotal:" /proc/meminfo 2>/dev/null |grep -o "[0-9]*"`
-  [ -n "$mem" ] || return 0
-  [ "$mem" -le "524288" ] && return 1 || return 0
-}
-
-if [[ "$loaderMode" == "0" ]]; then
-  Grub=`getGrub "/boot"`
-  [ -z "$Grub" ] && echo -ne "Error! Not Found grub.\n" && exit 1;
-  GRUBDIR=`echo "$Grub" |cut -d':' -f1`
-  GRUBFILE=`echo "$Grub" |cut -d':' -f2`
-  GRUBVER=`echo "$Grub" |cut -d':' -f3`
-fi
-
-[ -n "$Relese" ] || Relese='Debian'
-linux_relese=$(echo "$Relese" |sed 's/\ //g' |sed -r 's/(.*)/\L\1/')
-clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
-
-if [[ "$ddMode" == '1' ]]; then
-  dependence iconv;
-  linux_relese='debian';
-  tmpDIST='bullseye';
-  tmpVER='amd64';
-fi
-
-[ -n "$ipAddr" ] && [ -n "$ipMask" ] && [ -n "$ipGate" ] && setNet='1';
-if [ "$setNet" == "0" ]; then
-  dependence ip
-  [ -n "$interface" ] || interface=`getInterface`
-  iAddr=`ip addr show dev $interface |grep "inet.*" |head -n1 |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\/[0-9]\{1,2\}'`
-  ipAddr=`echo ${iAddr} |cut -d'/' -f1`
-  ipMask=`netmask $(echo ${iAddr} |cut -d'/' -f2)`
-  ipGate=`ip route show default |grep "^default" |grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' |head -n1`
-fi
-if [ -z "$interface" ]; then
-    dependence ip
-    [ -n "$interface" ] || interface=`getInterface`
-fi
-IPv4="$ipAddr"; MASK="$ipMask"; GATE="$ipGate";
-
-[ -n "$IPv4" ] && [ -n "$MASK" ] && [ -n "$GATE" ] && [ -n "$ipDNS" ] || {
-  echo -ne '\nError: Invalid network config\n\n'
-  bash $0 error;
-  exit 1;
-}
-
-if [[ "$Relese" == 'Debian' ]] || [[ "$Relese" == 'Ubuntu' ]]; then
-  dependence wget,awk,grep,sed,cut,cat,lsblk,cpio,gzip,find,dirname,basename;
-elif [[ "$Relese" == 'CentOS' ]]; then
-  dependence wget,awk,grep,sed,cut,cat,lsblk,cpio,gzip,find,dirname,basename,file,xz;
-fi
-[ -n "$tmpWORD" ] && dependence openssl
-[[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$4BJZaD0A$y1QykUnJ6mXprENfwpseH0';
-
-tempDisk=`getDisk`; [ -n "$tempDisk" ] && IncDisk="$tempDisk"
-
-case `uname -m` in aarch64|arm64) VER="arm64";; x86|i386|i686) VER="i386";; x86_64|amd64) VER="amd64";; *) VER="";; esac
-tmpVER="$(echo "$tmpVER" |sed -r 's/(.*)/\L\1/')";
-if [[ "$VER" != "arm64" ]] && [[ -n "$tmpVER" ]]; then
-  case "$tmpVER" in i386|i686|x86|32) VER="i386";; amd64|x86_64|x64|64) [[ "$Relese" == 'CentOS' ]] && VER='x86_64' || VER='amd64';; *) VER='';; esac
-fi
-
-if [[ ! -n "$VER" ]]; then
-  echo "Error! Not Architecture."
-  bash $0 error;
-  exit 1;
-fi
-
-if [[ -z "$tmpDIST" ]]; then
-  [ "$Relese" == 'Debian' ] && tmpDIST='buster';
-  [ "$Relese" == 'Ubuntu' ] && tmpDIST='bionic';
-  [ "$Relese" == 'CentOS' ] && tmpDIST='6.10';
-fi
-
-if [[ -n "$tmpDIST" ]]; then
-  if [[ "$Relese" == 'Debian' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
-    echo "$DIST" |grep -q '[0-9]';
-    [[ $? -eq '0' ]] && {
-      isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p' |cut -d'.' -f1)";
-      [[ -n $isDigital ]] && {
-        [[ "$isDigital" == '7' ]] && DIST='wheezy';
-        [[ "$isDigital" == '8' ]] && DIST='jessie';
-        [[ "$isDigital" == '9' ]] && DIST='stretch';
-        [[ "$isDigital" == '10' ]] && DIST='buster';
-        [[ "$isDigital" == '11' ]] && DIST='bullseye';
-      }
-    }
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'Ubuntu' ]]; then
-    SpikCheckDIST='0'
-    DIST="$(echo "$tmpDIST" |sed -r 's/(.*)/\L\1/')";
-    echo "$DIST" |grep -q '[0-9]';
-    [[ $? -eq '0' ]] && {
-      isDigital="$(echo "$DIST" |grep -o '[\.0-9]\{1,\}' |sed -n '1h;1!H;$g;s/\n//g;$p')";
-      [[ -n $isDigital ]] && {
-        [[ "$isDigital" == '12.04' ]] && DIST='precise';
-        [[ "$isDigital" == '14.04' ]] && DIST='trusty';
-        [[ "$isDigital" == '16.04' ]] && DIST='xenial';
-        [[ "$isDigital" == '18.04' ]] && DIST='bionic';
-        [[ "$isDigital" == '20.04' ]] && DIST='focal';
-      }
-    }
-    LinuxMirror=$(selectMirror "$Relese" "$DIST" "$VER" "$tmpMirror")
-  fi
-  if [[ "$Relese" == 'CentOS' ]]; then
-    SpikCheckDIST='1'
-    DISTCheck="$(echo "$tmpDIST" |grep -o '[\.0-9]\{1,\}' |head -n1)";
-    LinuxMirror=$(selectMirror "$Relese" "$DISTCheck" "$VER" "$tmpMirror")
-    ListDIST="$(wget --no-check-certificate -qO- "$LinuxMirror/dir_sizes" |cut -f2 |grep '^[0-9]')"
-    DIST="$(echo "$ListDIST" |grep "^$DISTCheck" |head -n1)"
-    [[ -z "$DIST" ]] && {
-      echo -ne '\nThe dists version not found in this mirror, Please check it! \n\n'
-      bash $0 error;
-      exit 1;
-    }
-    wget --no-check-certificate -qO- "$LinuxMirror/$DIST/os/$VER/.treeinfo" |grep -q 'general';
-    [[ $? != '0' ]] && {
-        echo -ne "\nThe version not found in this mirror, Please change mirror try again! \n\n";
-        exit 1;
-    }
-  fi
-fi
-
-if [[ -z "$LinuxMirror" ]]; then
-  echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
-  [ "$Relese" == 'Debian' ] && echo -en "\033[33mexample:\033[0m http://deb.debian.org/debian\n\n";
-  [ "$Relese" == 'Ubuntu' ] && echo -en "\033[33mexample:\033[0m http://archive.ubuntu.com/ubuntu\n\n";
-  [ "$Relese" == 'CentOS' ] && echo -en "\033[33mexample:\033[0m http://mirror.centos.org/centos\n\n";
-  bash $0 error;
-  exit 1;
-fi
-
-if [[ "$SpikCheckDIST" == '0' ]]; then
-  DistsList="$(wget --no-check-certificate -qO- "$LinuxMirror/dists/" |grep -o 'href=.*/"' |cut -d'"' -f2 |sed '/-\|old\|Debian\|experimental\|stable\|test\|sid\|devel/d' |grep '^[^/]' |sed -n '1h;1!H;$g;s/\n//g;s/\//\;/g;$p')";
-  for CheckDEB in `echo "$DistsList" |sed 's/;/\n/g'`
-    do
-      [[ "$CheckDEB" == "$DIST" ]] && FindDists='1' && break;
-    done
-  [[ "$FindDists" == '0' ]] && {
-    echo -ne '\nThe dists version not found, Please check it! \n\n'
-    bash $0 error;
-    exit 1;
-  }
-fi
-
-if [[ "$ddMode" == '1' ]]; then
-  if [[ -n "$tmpURL" ]]; then
-    DDURL="$tmpURL"
-    echo "$DDURL" |grep -q '^http://\|^ftp://\|^https://';
-    [[ $? -ne '0' ]] && echo 'Please input vaild URL,Only support http://, ftp:// and https:// !' && exit 1;
+judge() {
+  if [[ 0 -eq $? ]]; then
+    print_ok "$1 完成"
+    sleep 1
   else
-    echo 'Please input vaild image URL! ';
-    exit 1;
+    print_error "$1 失败"
+    exit 1
   fi
-fi
-
-clear && echo -e "\n\033[36m# Install\033[0m\n"
-
-[[ "$ddMode" == '1' ]] && echo -ne "\033[34mAuto Mode\033[0m insatll \033[33mWindows\033[0m\n[\033[33m$DDURL\033[0m]\n"
-
-if [ -z "$interfaceSelect" ]; then
-  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-    interfaceSelect="auto"
-  elif [[ "$linux_relese" == 'centos' ]]; then
-    interfaceSelect="link"
-  fi
-fi
-
-if [[ "$linux_relese" == 'centos' ]]; then
-  if [[ "$DIST" != "$UNVER" ]]; then
-    awk 'BEGIN{print '${UNVER}'-'${DIST}'}' |grep -q '^-'
-    if [ $? != '0' ]; then
-      UNKNOWHW='1';
-      echo -en "\033[33mThe version lower then \033[31m$UNVER\033[33m may not support in auto mode! \033[0m\n";
-    fi
-    awk 'BEGIN{print '${UNVER}'-'${DIST}'+0.59}' |grep -q '^-'
-    if [ $? == '0' ]; then
-      echo -en "\n\033[31mThe version higher then \033[33m6.10 \033[31mis not support in current! \033[0m\n\n"
-      exit 1;
-    fi
-  fi
-fi
-
-echo -e "\n[\033[33m$Relese\033[0m] [\033[33m$DIST\033[0m] [\033[33m$VER\033[0m] Downloading..."
-
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-  [ "$DIST" == "focal" ] && legacy="legacy-" || legacy=""
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/dists/${DIST}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/initrd.gz"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/dists/${DIST}${inUpdate}/main/installer-${VER}/current/${legacy}images/netboot/${linux_relese}-installer/${VER}/linux"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  MirrorHost="$(echo "$LinuxMirror" |awk -F'://|/' '{print $2}')";
-  MirrorFolder="$(echo "$LinuxMirror" |awk -F''${MirrorHost}'' '{print $2}')";
-  [ -n "$MirrorFolder" ] || MirrorFolder="/"
-elif [[ "$linux_relese" == 'centos' ]]; then
-  wget --no-check-certificate -qO '/tmp/initrd.img' "${LinuxMirror}/${DIST}/os/${VER}/isolinux/initrd.img"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'initrd.img' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  wget --no-check-certificate -qO '/tmp/vmlinuz' "${LinuxMirror}/${DIST}/os/${VER}/isolinux/vmlinuz"
-  [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'vmlinuz' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-else
-  bash $0 error;
-  exit 1;
-fi
-if [[ "$linux_relese" == 'debian' ]]; then
-  if [[ "$IncFirmware" == '1' ]]; then
-    wget --no-check-certificate -qO '/tmp/firmware.cpio.gz' "http://cdimage.debian.org/cdimage/unofficial/non-free/firmware/${DIST}/current/firmware.cpio.gz"
-    [[ $? -ne '0' ]] && echo -ne "\033[31mError! \033[0mDownload 'firmware' for \033[33m$linux_relese\033[0m failed! \n" && exit 1
-  fi
-  if [[ "$ddMode" == '1' ]]; then
-    vKernel_udeb=$(wget --no-check-certificate -qO- "http://$DISTMirror/dists/$DIST/main/installer-$VER/current/images/udeb.list" |grep '^acpi-modules' |head -n1 |grep -o '[0-9]\{1,2\}.[0-9]\{1,2\}.[0-9]\{1,2\}-[0-9]\{1,2\}' |head -n1)
-    [[ -z "vKernel_udeb" ]] && vKernel_udeb="4.19.0-17"
-  fi
-fi
-
-if [[ "$loaderMode" == "0" ]]; then
-  [[ ! -f "${GRUBDIR}/${GRUBFILE}" ]] && echo "Error! Not Found ${GRUBFILE}. " && exit 1;
-
-  [[ ! -f "${GRUBDIR}/${GRUBFILE}.old" ]] && [[ -f "${GRUBDIR}/${GRUBFILE}.bak" ]] && mv -f "${GRUBDIR}/${GRUBFILE}.bak" "${GRUBDIR}/${GRUBFILE}.old";
-  mv -f "${GRUBDIR}/${GRUBFILE}" "${GRUBDIR}/${GRUBFILE}.bak";
-  [[ -f "${GRUBDIR}/${GRUBFILE}.old" ]] && cat "${GRUBDIR}/${GRUBFILE}.old" >"${GRUBDIR}/${GRUBFILE}" || cat "${GRUBDIR}/${GRUBFILE}.bak" >"${GRUBDIR}/${GRUBFILE}";
-else
-  GRUBVER='-1'
-fi
-
-[[ "$GRUBVER" == '0' ]] && {
-  READGRUB='/tmp/grub.read'
-  cat $GRUBDIR/$GRUBFILE |sed -n '1h;1!H;$g;s/\n/%%%%%%%/g;$p' |grep -om 1 'menuentry\ [^{]*{[^}]*}%%%%%%%' |sed 's/%%%%%%%/\n/g' >$READGRUB
-  LoadNum="$(cat $READGRUB |grep -c 'menuentry ')"
-  if [[ "$LoadNum" -eq '1' ]]; then
-    cat $READGRUB |sed '/^$/d' >/tmp/grub.new;
-  elif [[ "$LoadNum" -gt '1' ]]; then
-    CFG0="$(awk '/menuentry /{print NR}' $READGRUB|head -n 1)";
-    CFG2="$(awk '/menuentry /{print NR}' $READGRUB|head -n 2 |tail -n 1)";
-    CFG1="";
-    for tmpCFG in `awk '/}/{print NR}' $READGRUB`
-      do
-        [ "$tmpCFG" -gt "$CFG0" -a "$tmpCFG" -lt "$CFG2" ] && CFG1="$tmpCFG";
-      done
-    [[ -z "$CFG1" ]] && {
-      echo "Error! read $GRUBFILE. ";
-      exit 1;
-    }
-
-    sed -n "$CFG0,$CFG1"p $READGRUB >/tmp/grub.new;
-    [[ -f /tmp/grub.new ]] && [[ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ]] || {
-      echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE. \n";
-      exit 1;
-    }
-  fi
-  [ ! -f /tmp/grub.new ] && echo "Error! $GRUBFILE. " && exit 1;
-  sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$DIST\ $VER\]\'\ --class debian\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
-  sed -i "/echo.*Loading/d" /tmp/grub.new;
-  INSERTGRUB="$(awk '/menuentry /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
 }
-
-[[ "$GRUBVER" == '1' ]] && {
-  CFG0="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)";
-  CFG1="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 2 |tail -n 1)";
-  [[ -n $CFG0 ]] && [ -z $CFG1 -o $CFG1 == $CFG0 ] && sed -n "$CFG0,$"p $GRUBDIR/$GRUBFILE >/tmp/grub.new;
-  [[ -n $CFG0 ]] && [ -z $CFG1 -o $CFG1 != $CFG0 ] && sed -n "$CFG0,$[$CFG1-1]"p $GRUBDIR/$GRUBFILE >/tmp/grub.new;
-  [[ ! -f /tmp/grub.new ]] && echo "Error! configure append $GRUBFILE. " && exit 1;
-  sed -i "/title.*/c\title\ \'Install OS \[$DIST\ $VER\]\'" /tmp/grub.new;
-  sed -i '/^#/d' /tmp/grub.new;
-  INSERTGRUB="$(awk '/title[\ ]|title[\t]/{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
+function is_root() {
+  if [[ 0 == "$UID" ]]; then
+    print_ok "当前用户是 root 用户，开始安装流程"
+  else
+    print_error "当前用户不是 root 用户，请切换到 root 用户后重新执行脚本"
+    exit 1
+  fi
 }
-
-if [[ "$loaderMode" == "0" ]]; then
-  [[ -n "$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $2}' |tail -n 1 |grep '^/boot/')" ]] && Type='InBoot' || Type='NoBoot';
-
-  LinuxKernel="$(grep 'linux.*/\|kernel.*/' /tmp/grub.new |awk '{print $1}' |head -n 1)";
-  [[ -z "$LinuxKernel" ]] && echo "Error! read grub config! " && exit 1;
-  LinuxIMG="$(grep 'initrd.*/' /tmp/grub.new |awk '{print $1}' |tail -n 1)";
-  [ -z "$LinuxIMG" ] && sed -i "/$LinuxKernel.*\//a\\\tinitrd\ \/" /tmp/grub.new && LinuxIMG='initrd';
-
-  [[ "$setInterfaceName" == "1" ]] && Add_OPTION="net.ifnames=0 biosdevname=0" || Add_OPTION=""
-  [[ "$setIPv6" == "1" ]] && Add_OPTION="$Add_OPTION ipv6.disable=1"
-  
-  lowMem || Add_OPTION="$Add_OPTION lowmem=+0"
-
-  if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-    BOOT_OPTION="auto=true $Add_OPTION hostname=$linux_relese domain= -- quiet"
-  elif [[ "$linux_relese" == 'centos' ]]; then
-    BOOT_OPTION="ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect"
+function system_check() {
+  source '/etc/os-release'
+  if [[ "${ID}" == "centos" && ${VERSION_ID} -ge 7 ]]; then
+    print_ok "当前系统为 Centos ${VERSION_ID} ${VERSION}"
+    INS="yum install -y"
+    #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
+  elif [[ "${ID}" == "ol" ]]; then
+    print_ok "当前系统为 Oracle Linux ${VERSION_ID} ${VERSION}"
+    INS="yum install -y"
+    print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
+    exit 1
+    #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
+  elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 9 ]]; then
+    print_ok "当前系统为 Debian ${VERSION_ID} ${VERSION}"
+    INS="apt install -y"
+    #apt update
+  elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 18 ]]; then
+    print_ok "当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME}"
+    INS="apt install -y"
+    print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
+    exit 1
+  else
+    print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
+    exit 1
+  fi
+  if [[ $(grep "nogroup" /etc/group) ]]; then
+    cert_group="nogroup"
   fi
 
-  [[ "$Type" == 'InBoot' ]] && {
-    sed -i "/$LinuxKernel.*\//c\\\t$LinuxKernel\\t\/boot\/vmlinuz $BOOT_OPTION" /tmp/grub.new;
-    sed -i "/$LinuxIMG.*\//c\\\t$LinuxIMG\\t\/boot\/initrd.img" /tmp/grub.new;
-  }
-
-  [[ "$Type" == 'NoBoot' ]] && {
-    sed -i "/$LinuxKernel.*\//c\\\t$LinuxKernel\\t\/vmlinuz $BOOT_OPTION" /tmp/grub.new;
-    sed -i "/$LinuxIMG.*\//c\\\t$LinuxIMG\\t\/initrd.img" /tmp/grub.new;
-  }
-
-  sed -i '$a\\n' /tmp/grub.new;
-  
-  sed -i ''${INSERTGRUB}'i\\n' $GRUBDIR/$GRUBFILE;
-  sed -i ''${INSERTGRUB}'r /tmp/grub.new' $GRUBDIR/$GRUBFILE;
-  [[ -f  $GRUBDIR/grubenv ]] && sed -i 's/saved_entry/#saved_entry/g' $GRUBDIR/grubenv;
-fi
-
-[[ -d /tmp/boot ]] && rm -rf /tmp/boot;
-mkdir -p /tmp/boot;
-cd /tmp/boot;
-
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-  COMPTYPE="gzip";
-elif [[ "$linux_relese" == 'centos' ]]; then
-  COMPTYPE="$(file ../initrd.img |grep -o ':.*compressed data' |cut -d' ' -f2 |sed -r 's/(.*)/\L\1/' |head -n1)"
-  [[ -z "$COMPTYPE" ]] && echo "Detect compressed type fail." && exit 1;
-fi
-CompDected='0'
-for COMP in `echo -en 'gzip\nlzma\nxz'`
-  do
-    if [[ "$COMPTYPE" == "$COMP" ]]; then
-      CompDected='1'
-      if [[ "$COMPTYPE" == 'gzip' ]]; then
-        NewIMG="initrd.img.gz"
+  #$INS dbus
+  # 关闭各类防火墙
+  systemctl stop firewalld
+  systemctl disable firewalld
+  systemctl stop nftables
+  systemctl disable nftables
+  systemctl stop ufw
+  systemctl disable ufw
+}
+#属性=修改
+Para_Modify() {
+  sed -i "s/^.\? *$2 *=.*$/$2 = $3/g" $1
+  judge "$1 modify $2 to $3"
+}
+function sshd() {
+  sed -i 's/^.\? *PermitRootLogin.*$/PermitRootLogin yes/g' /etc/ssh/sshd_config
+  sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+  sed -i 's/^.\? *Port.*$/Port 26254/g' /etc/ssh/sshd_config
+  sed -i 's/^.\?ListenAddress 0.0.0.0/ListenAddress 0.0.0.0/g' /etc/ssh/sshd_config
+  systemctl restart sshd
+  judge "sshd_config 修改"
+}
+function firewall() {
+  if [[ "${ID}" == "centos" ]]; then
+    systemctl stop firewalld
+    systemctl disable firewalld
+    ${INS} iptables iptables-services
+    IPTABLEF=/etc/sysconfig/iptables
+  elif [[ "${ID}" == "debian" ]]; then
+    systemctl stop ufw
+    systemctl disable ufw
+    ${INS} iptables
+    mkdir /etc/iptables
+    IPTABLEF=/etc/iptables/rules.v4
+  fi
+  judge "iptables 安装"
+  cat <<EOF>${IPTABLEF}
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -s 127.0.0.1/32 -d 127.0.0.1/32 -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 26254 -j ACCEPT
+-A INPUT -j DROP
+-A FORWARD -j DROP
+-A OUTPUT -j ACCEPT
+COMMIT
+# Completed on Wed Jun 16 04:51:40 2021
+EOF
+  if [[ "${ID}" == "centos" ]]; then
+    systemctl restart iptables
+    systemctl enable iptables
+  else
+    iptables-restore <${IPTABLEF}
+    cat <<EOF>/etc/network/if-pre-up.d/iptables
+#!/bin/sh
+/sbin/iptables-restore <${IPTABLEF}
+EOF
+  chmod +x /etc/network/if-pre-up.d/iptables
+  fi
+  iptables -L
+}
+function installTools() {
+  timedatectl set-timezone Asia/Shanghai
+  if [[ "${ID}" == "centos" ]]; then
+    ${INS} epel-release https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+    judge "epel-release 与 remi 源安装"
+    ${INS} vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools
+    judge "vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools 安装"
+  elif [[ "${ID}" == "debian" ]]; then
+    ${INS} vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools gnupg2 ca-certificates lsb-release
+    judge "vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools gnupg2 ca-certificates lsb-release 安装"
+  fi
+}
+function php_remove() {
+  if [[ "${ID}" == "centos" ]]; then
+    systemctl stop php-fpm
+    PGPMODULES=$(rpm -qa|grep php|tr "\n"  " ")
+    yum remove -y ${PGPMODULES}
+    judge "${PGPMODULES} 卸载"
+  elif [[ "${ID}" == "debian" ]]; then
+    apt purge -y $(dpkg -l | grep php| awk '{print $2}' |tr "\n" " ")
+  fi
+}
+function module_remove() {
+  echo -e "${Green}1.${Font} 卸载 php"
+  echo -e "${Green}2.${Font} 卸载 nginx"
+  echo -e "${Green}3.${Font} 卸载 mysql"
+  echo -e "${Green}4.${Font} 卸载 mariaDB"
+  read -rp "请输入模块序号或者名字：" module_num
+  case $module_num in
+  1)
+    MODEL_NAMEC="php"
+    MODEL_NAMED="php"
+    ;;
+  2)
+    MODEL_NAMEC="nginx"
+    MODEL_NAMED="nginx"
+    ;;
+  3)
+    MODEL_NAMEC="^mysql"
+    MODEL_NAMED=" mysql"
+    ;;
+  4)
+    MODEL_NAMEC="^mariadb"
+    MODEL_NAMED=" mariadb"
+    ;;
+  *)
+    print_error "请输入正确的数字"
+    ;;
+  esac
+  if [[ "${ID}" == "centos" ]]; then
+    yum autoremove -y $(rpm -qa |grep "$MODEL_NAMEC"|tr "\n" " ")
+  elif [[ "${ID}" == "debian" ]]; then
+    apt purge -y $(dpkg -l |grep "$MODEL_NAMED"|awk '{ print $2 }'|tr "\n" " ")
+  fi
+}
+function php() {
+  if [[ "${ID}" == "centos" ]]; then
+    PHPINS=$(rpm -qa|grep -c php)
+  elif [[ "${ID}" == "debian" ]]; then
+    PHPINS=$(dpkg -l|grep -c php)
+  fi
+  if [ $PHPINS -ge 1 ]; then
+    read -rp "php已经安装是否重装(y/n)：" answer
+      if echo "$answer" | grep -iq "^y" ;then
+        module_remove "php"
       else
-        NewIMG="initrd.img.$COMPTYPE"
+        return
       fi
-      mv -f "/tmp/initrd.img" "/tmp/$NewIMG"
-      break;
+  fi
+  if [[ "${ID}" == "centos" ]]; then
+    yum module -y reset php
+    yum module list php
+    read -rp "请输入PHP 版本:" PHPV
+    yum module -y enable php:$PHPV
+    ${INS} php
+    judge "php 安装"
+    ${INS} php-{mbstring,pecl-apcu,opcache,json,mysqlnd,zip,process,bcmath,gmp,intl,gd}
+    judge "php 其他模块 安装"
+    systemctl stop httpd
+    systemctl disable httpd
+  elif [[ "${ID}" == "debian" ]]; then
+    read -rp "请输入PHP 版本:" PHPV
+    NUMPHP=$(apt search "^php${PHPV}-" 2>/dev/null|grep -c php)
+    if [[ $NUMPHP -le 10 ]]; then
+      ${INS} lsb-release apt-transport-https ca-certificates
+      wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+      echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >/etc/apt/sources.list.d/php.list
+      apt update -y
     fi
-  done
-[[ "$CompDected" != '1' ]] && echo "Detect compressed type not support." && exit 1;
-[[ "$COMPTYPE" == 'lzma' ]] && UNCOMP='xz --format=lzma --decompress';
-[[ "$COMPTYPE" == 'xz' ]] && UNCOMP='xz --decompress';
-[[ "$COMPTYPE" == 'gzip' ]] && UNCOMP='gzip -d';
+    NUMPHP=$(apt search "^php${PHPV}-" 2>/dev/null|grep -c php)
+    if [[ $NUMPHP -le 10 ]]; then
+       print_error "无法找到php${PHPV}"
+       exit 1
+    fi
+    ${INS} php${PHPV} php${PHPV}-fpm
+    judge "php${PHPV} 安装"
+    ${INS} php${PHPV}-{dom,xml,curl,apcu,opcache,json,gmp,bcmath,bz2,intl,gd,mbstring,mysql,zip}
+    judge "php${PHPV} 其他模块安装"
+    systemctl stop apache2
+    systemctl disable apache2
+  fi
+}
+function php_fpm() {
+  if [[ "${ID}" == "centos" ]]; then
+    php_fpmcfg=/etc/php-fpm.d/www.conf
+    php_inicfg=/etc/php.ini
+  elif [[ "${ID}" == "debian" ]]; then
+    PHPV=$(/usr/bin/php -v | head -n 1 | cut -d " " -f 2 | cut -f1-2 -d".")
+    php_fpmcfg=/etc/php/${PHPV}/fpm/pool.d/www.conf
+    php_inicfg=/etc/php/${PHPV}/fpm/php.ini
+  fi
+  sed -i 's/^.\?env\[HOSTNAME\]/env\[HOSTNAME\]/g' $php_fpmcfg
+  sed -i 's/^.\?env\[PATH\]/env\[PATH\]/g' $php_fpmcfg
+  Para_Modify $php_fpmcfg 'user' 'nginx'
+  Para_Modify $php_fpmcfg 'group' 'nginx'
+  Para_Modify $php_fpmcfg 'listen' '127.0.0.1:9000'
+  Para_Modify $php_fpmcfg 'listen.group' 'nginx'
+  Para_Modify $php_fpmcfg 'listen.owner' 'nginx'
+  cat $php_fpmcfg |grep -v ^#|grep -v ^\;|grep -v ^$
+  Para_Modify $php_inicfg 'memory_limit' '512M'
+  if [[ "${ID}" == "centos" ]]; then
+    systemctl restart php-fpm
+    systemctl enable php-fpm
+    systemctl status php-fpm
+  elif [[ "${ID}" == "debian" ]]; then
+    systemctl restart php${PHPV}-fpm
+    systemctl enable php${PHPV}-fpm
+    systemctl status php${PHPV}-fpm
 
-$UNCOMP < /tmp/$NewIMG | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
+  fi
+  if [[ -e /etc/nginx/conf.d/php-fpm.conf ]]; then
+    rm -f /etc/nginx/conf.d/php-fpm.conf
+  fi
+}
+function BBR() {
+    sed -i '/^.*net.core.default_qdisc.*$/d' /etc/sysctl.conf
+    sed -i '/^.*net.ipv4.tcp_congestion_control.*$/d' /etc/sysctl.conf
+    echo "net.core.default_qdisc = fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
+    sysctl -p
+}
+function acme_install() {
+  rm  -rf .acme.sh
+  curl -L get.acme.sh | bash
+  judge "安装 acme"
+  source .bashrc
+  wget wget $githuburl/res/myacme.zip
+  unzip  myacme.zip
+  rm -f myacme.zip
+  if [ -e myacme.conf ]; then
+    CF_API=$(grep ^SAVED_CF_Key myacme.conf |tr "\n" " ")
+    echo ${CF_API}>>/root/.acme.sh/account.conf
+    CF_EMAIL=$(grep ^SAVED_CF_Email myacme.conf |tr "\n" " ")
+    echo ${CF_EMAIL}>>/root/.acme.sh/account.conf
+    ACME_E=$(grep acme_Email myacme.conf |awk -F= '{print $2}'|tr "\n" " ")
+    .acme.sh/acme.sh --register-account -m $ACME_E
+    rm myacme.conf
+  fi
+}
 
-if [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
-cat >/tmp/boot/preseed.cfg<<EOF
-d-i debian-installer/locale string en_US
-d-i console-setup/layoutcode string us
-
-d-i keyboard-configuration/xkb-keymap string us
-
-d-i netcfg/choose_interface select $interfaceSelect
-
-d-i netcfg/disable_autoconfig boolean true
-d-i netcfg/dhcp_failed note
-d-i netcfg/dhcp_options select Configure network manually
-d-i netcfg/get_ipaddress string $IPv4
-d-i netcfg/get_netmask string $MASK
-d-i netcfg/get_gateway string $GATE
-d-i netcfg/get_nameservers string $ipDNS
-d-i netcfg/no_default_route boolean true
-d-i netcfg/confirm_static boolean true
-
-d-i hw-detect/load_firmware boolean true
-
-d-i mirror/country string manual
-d-i mirror/http/hostname string $MirrorHost
-d-i mirror/http/directory string $MirrorFolder
-d-i mirror/http/proxy string
-
-d-i passwd/root-login boolean ture
-d-i passwd/make-user boolean false
-d-i passwd/root-password-crypted password $myPASSWORD
-d-i user-setup/allow-password-weak boolean true
-d-i user-setup/encrypt-home boolean false
-
-d-i clock-setup/utc boolean true
-d-i time/zone string US/Eastern
-d-i clock-setup/ntp boolean false
-
-d-i preseed/early_command string anna-install libfuse2-udeb fuse-udeb ntfs-3g-udeb libcrypto1.1-udeb libpcre2-8-0-udeb libssl1.1-udeb libuuid1-udeb zlib1g-udeb wget-udeb
-d-i partman/early_command string [[ -n "\$(blkid -t TYPE='vfat' -o device)" ]] && umount "\$(blkid -t TYPE='vfat' -o device)"; \
-debconf-set partman-auto/disk "\$(list-devices disk |head -n1)"; \
-wget -qO- '$DDURL' |gunzip -dc |/bin/dd of=\$(list-devices disk |head -n1); \
-mount.ntfs-3g \$(list-devices partition |head -n1) /mnt; \
-cd '/mnt/ProgramData/Microsoft/Windows/Start Menu/Programs'; \
-cd Start* || cd start*; \
-cp -f '/net.bat' './net.bat'; \
-/sbin/reboot; \
-umount /media || true; \
-
-d-i partman-partitioning/confirm_write_new_label boolean true
-d-i partman/mount_style select uuid
-d-i partman/choose_partition select finish
-d-i partman-auto/method string regular
-d-i partman-auto/init_automatically_partition select Guided - use entire disk
-d-i partman-auto/choose_recipe select All files in one partition (recommended for new users)
-d-i partman-md/device_remove_md boolean true
-d-i partman-lvm/device_remove_lvm boolean true
-d-i partman-lvm/confirm boolean true
-d-i partman-lvm/confirm_nooverwrite boolean true
-d-i partman/confirm boolean true
-d-i partman/confirm_nooverwrite boolean true
-
-d-i debian-installer/allow_unauthenticated boolean true
-
-tasksel tasksel/first multiselect minimal
-d-i pkgsel/update-policy select none
-d-i pkgsel/include string openssh-server
-d-i pkgsel/upgrade select none
-
-popularity-contest popularity-contest/participate boolean false
-
-d-i grub-installer/only_debian boolean true
-d-i grub-installer/bootdev string $IncDisk
-d-i grub-installer/force-efi-extra-removable boolean true
-d-i finish-install/reboot_in_progress note
-d-i debian-installer/exit/reboot boolean true
-d-i preseed/late_command string	\
-sed -ri 's/^#?Port.*/Port ${sshPORT}/g' /target/etc/ssh/sshd_config; \
-sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
-sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config; \
-echo '@reboot root cat /etc/run.sh 2>/dev/null |base64 -d >/tmp/run.sh; rm -rf /etc/run.sh; sed -i /^@reboot/d /etc/crontab; bash /tmp/run.sh' >>/target/etc/crontab; \
-echo '' >>/target/etc/crontab; \
-echo '${setCMD}' >/target/etc/run.sh;
+function acme_url() {
+  read -rp "your domain:" ROOTD
+  .acme.sh/acme.sh --issue --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
+  .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
+  #Domain更新脚本
+  if [[ -f ${cron_update_file}  ]]; then
+    print_error  "${cron_update_file}  exist  请手动插入以下内容:"
+    echo "/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
+    echo "/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
+    return
+  fi
+  cat <<EOF> "${cron_update_file}"
+#!/usr/bin/env bash
+domain = ${ROOTD}
+systemctl stop nginx &> /dev/null
+sleep 1
+"/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
+"/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
+sleep 1
+systemctl start nginx &> /dev/null
 EOF
-
-if [[ "$loaderMode" != "0" ]] && [[ "$setNet" == '0' ]]; then
-  sed -i '/netcfg\/disable_autoconfig/d' /tmp/boot/preseed.cfg
-  sed -i '/netcfg\/dhcp_options/d' /tmp/boot/preseed.cfg
-  sed -i '/netcfg\/get_.*/d' /tmp/boot/preseed.cfg
-  sed -i '/netcfg\/confirm_static/d' /tmp/boot/preseed.cfg
-fi
-
-if [[ "$linux_relese" == 'debian' ]]; then
-  sed -i '/user-setup\/allow-password-weak/d' /tmp/boot/preseed.cfg
-  sed -i '/user-setup\/encrypt-home/d' /tmp/boot/preseed.cfg
-  sed -i '/pkgsel\/update-policy/d' /tmp/boot/preseed.cfg
-  sed -i 's/umount\ \/media.*true\;\ //g' /tmp/boot/preseed.cfg
-  [[ -f '/tmp/firmware.cpio.gz' ]] && gzip -d < /tmp/firmware.cpio.gz | cpio --extract --verbose --make-directories --no-absolute-filenames >>/dev/null 2>&1
-else
-  sed -i '/d-i\ grub-installer\/force-efi-extra-removable/d' /tmp/boot/preseed.cfg
-fi
-
-[[ "$ddMode" == '1' ]] && {
-WinNoDHCP(){
-  echo -ne "for\0040\0057f\0040\0042tokens\00753\0052\0042\0040\0045\0045i\0040in\0040\0050\0047netsh\0040interface\0040show\0040interface\0040\0136\0174more\0040\00533\0040\0136\0174findstr\0040\0057I\0040\0057R\0040\0042本地\0056\0052\0040以太\0056\0052\0040Local\0056\0052\0040Ethernet\0042\0047\0051\0040do\0040\0050set\0040EthName\0075\0045\0045j\0051\r\nnetsh\0040\0055c\0040interface\0040ip\0040set\0040address\0040name\0075\0042\0045EthName\0045\0042\0040source\0075static\0040address\0075$IPv4\0040mask\0075$MASK\0040gateway\0075$GATE\r\nnetsh\0040\0055c\0040interface\0040ip\0040add\0040dnsservers\0040name\0075\0042\0045EthName\0045\0042\0040address\00758\00568\00568\00568\0040index\00751\0040validate\0075no\r\n\r\n" >>'/tmp/boot/net.tmp';
+  if [[ "${ID}" == "centos" || "${ID}" == "ol" ]]; then
+    ${INS} crontabs
+  else
+    ${INS} cron
+  fi
+  judge "安装 crontab"
+  if [[ "${ID}" == "centos" || "${ID}" == "ol" ]]; then
+    CRONF=/var/spool/cron/root
+    CRONCMD=crond
+  else
+    CRONF=/var/spool/cron/crontabs/root
+    CRONCMD=cron
+  fi
+  sed -i "/acme.sh/d" ${CRONF}
+  sed -i "/^.*${cron_update_file}.*$/d" ${CRONF}
+  echo "0 3 1 * * bash ${cron_update_file}">>${CRONF}
+  judge "cron 计划任务更新"
+  systemctl restart ${CRONCMD} && systemctl enable ${CRONCMD}
 }
-WinRDP(){
-  echo -ne "netsh\0040firewall\0040set\0040portopening\0040protocol\0075ALL\0040port\0075$WinRemote\0040name\0075RDP\0040mode\0075ENABLE\0040scope\0075ALL\0040profile\0075ALL\r\nnetsh\0040firewall\0040set\0040portopening\0040protocol\0075ALL\0040port\0075$WinRemote\0040name\0075RDP\0040mode\0075ENABLE\0040scope\0075ALL\0040profile\0075CURRENT\r\nreg\0040add\0040\0042HKLM\0134SYSTEM\0134CurrentControlSet\0134Control\0134Network\0134NewNetworkWindowOff\0042\0040\0057f\r\nreg\0040add\0040\0042HKLM\0134SYSTEM\0134CurrentControlSet\0134Control\0134Terminal\0040Server\0042\0040\0057v\0040fDenyTSConnections\0040\0057t\0040reg\0137dword\0040\0057d\00400\0040\0057f\r\nreg\0040add\0040\0042HKLM\0134SYSTEM\0134CurrentControlSet\0134Control\0134Terminal\0040Server\0134Wds\0134rdpwd\0134Tds\0134tcp\0042\0040\0057v\0040PortNumber\0040\0057t\0040reg\0137dword\0040\0057d\0040$WinRemote\0040\0057f\r\nreg\0040add\0040\0042HKLM\0134SYSTEM\0134CurrentControlSet\0134Control\0134Terminal\0040Server\0134WinStations\0134RDP\0055Tcp\0042\0040\0057v\0040PortNumber\0040\0057t\0040reg\0137dword\0040\0057d\0040$WinRemote\0040\0057f\r\nreg\0040add\0040\0042HKLM\0134SYSTEM\0134CurrentControlSet\0134Control\0134Terminal\0040Server\0134WinStations\0134RDP\0055Tcp\0042\0040\0057v\0040UserAuthentication\0040\0057t\0040reg\0137dword\0040\0057d\00400\0040\0057f\r\nFOR\0040\0057F\0040\0042tokens\00752\0040delims\0075\0072\0042\0040\0045\0045i\0040in\0040\0050\0047SC\0040QUERYEX\0040TermService\0040\0136\0174FINDSTR\0040\0057I\0040\0042PID\0042\0047\0051\0040do\0040TASKKILL\0040\0057F\0040\0057PID\0040\0045\0045i\r\nFOR\0040\0057F\0040\0042tokens\00752\0040delims\0075\0072\0042\0040\0045\0045i\0040in\0040\0050\0047SC\0040QUERYEX\0040UmRdpService\0040\0136\0174FINDSTR\0040\0057I\0040\0042PID\0042\0047\0051\0040do\0040TASKKILL\0040\0057F\0040\0057PID\0040\0045\0045i\r\nSC\0040START\0040TermService\r\n\r\n" >>'/tmp/boot/net.tmp';
+function nginx_install() {
+  if [[ "${ID}" == "centos" || "${ID}" == "ol" ]]; then
+    yum module -y  reset nginx
+    yum module list nginx
+    read -rp "请输入nginx 版本:" NGINXV
+    yum module -y enable nginx:$NGINXV
+  else
+    $INS curl gnupg2 ca-certificates lsb-release
+    echo "deb https://nginx.org/packages/debian/ $(lsb_release -cs) nginx" >/etc/apt/sources.list.d/nginx.list
+    curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
+    apt update
+    systemctl stop apache2
+    systemctl disable apache2
+  fi
+  ${INS} nginx
+  judge "nginx 安装"
+  if [[ -e /etc/nginx/conf.d/php-fpm.conf ]]; then
+    rm -f /etc/nginx/conf.d/php-fpm.conf
+  fi
+  if [[ -e /etc/nginx/conf.d/default.conf ]]; then
+    rm -f /etc/nginx/conf.d/default.conf
+  fi
+  systemctl enable nginx
+  systemctl restart nginx
+  systemctl status nginx
 }
-  echo -ne "\0100ECHO\0040OFF\r\n\r\ncd\0056\0076\0045WINDIR\0045\0134GetAdmin\r\nif\0040exist\0040\0045WINDIR\0045\0134GetAdmin\0040\0050del\0040\0057f\0040\0057q\0040\0042\0045WINDIR\0045\0134GetAdmin\0042\0051\0040else\0040\0050\r\necho\0040CreateObject\0136\0050\0042Shell\0056Application\0042\0136\0051\0056ShellExecute\0040\0042\0045\0176s0\0042\0054\0040\0042\0045\0052\0042\0054\0040\0042\0042\0054\0040\0042runas\0042\0054\00401\0040\0076\0076\0040\0042\0045temp\0045\0134Admin\0056vbs\0042\r\n\0042\0045temp\0045\0134Admin\0056vbs\0042\r\ndel\0040\0057f\0040\0057q\0040\0042\0045temp\0045\0134Admin\0056vbs\0042\r\nexit\0040\0057b\00402\0051\r\n\r\n" >'/tmp/boot/net.tmp';
-  [[ "$setNet" == '1' ]] && WinNoDHCP;
-  [[ "$setNet" == '0' ]] && [[ "$AutoNet" == '0' ]] && WinNoDHCP;
-  [[ "$setRDP" == '1' ]] && [[ -n "$WinRemote" ]] && WinRDP
-  echo -ne "ECHO\0040SELECT\0040VOLUME\0075\0045\0045SystemDrive\0045\0045\0040\0076\0040\0042\0045SystemDrive\0045\0134diskpart\0056extend\0042\r\nECHO\0040EXTEND\0040\0076\0076\0040\0042\0045SystemDrive\0045\0134diskpart\0056extend\0042\r\nSTART\0040/WAIT\0040DISKPART\0040\0057S\0040\0042\0045SystemDrive\0045\0134diskpart\0056extend\0042\r\nDEL\0040\0057f\0040\0057q\0040\0042\0045SystemDrive\0045\0134diskpart\0056extend\0042\r\n\r\n" >>'/tmp/boot/net.tmp';
-  echo -ne "cd\0040\0057d\0040\0042\0045ProgramData\0045\0057Microsoft\0057Windows\0057Start\0040Menu\0057Programs\0057Startup\0042\r\ndel\0040\0057f\0040\0057q\0040net\0056bat\r\n\r\n\r\n" >>'/tmp/boot/net.tmp';
-  iconv -f 'UTF-8' -t 'GBK' '/tmp/boot/net.tmp' -o '/tmp/boot/net.bat'
-  rm -rf '/tmp/boot/net.tmp'
+
+function v2ray_install() {
+  bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh)
+  judge "v2ray 安装"
 }
-
-[[ "$ddMode" == '0' ]] && {
-  sed -i '/anna-install/d' /tmp/boot/preseed.cfg
-  sed -i 's/wget.*\/sbin\/reboot\;\ //g' /tmp/boot/preseed.cfg
+function nc_install() {
+  echo "https://nextcloud.com/install/#instructions-server"
+  read -rp "请输入NextCloud 链接:" NEXTCLOUDURL
+  wget $NEXTCLOUDURL
+  nczip=$(basename "$NEXTCLOUDURL")
+  echo $nczip
+  unzip $nczip
+  rm -f $nczip
+  mkdir -p /var/www/
+  mv nextcloud  /var/www/
+  
+  if [[ -d /var/lib/php/sessions ]]; then
+    chown nginx:nginx /var/lib/php/sessions
+  fi
+  if [[ -d /var/lib/php/session ]]; then
+    chown nginx:nginx /var/lib/php/session
+  fi
+  if [[ -d /var/lib/php/wsdlcache ]]; then
+    chown root:nginx /var/lib/php/wsdlcache
+  fi
+  if [[ -d /var/lib/php/opcache ]]; then
+    chown root:nginx /var/lib/php/opcache
+  fi
+  chown -R nginx:nginx /var/www/nextcloud
+  judge "NextCloud 安装到/var/www/nextcloud"
 }
+function wp_installupdate() {
+  wpurl=https://wordpress.org/latest.tar.gz
+  wget $wpurl
+  wpzip=$(basename "$wpurl")
+  tar -xzvf $wpzip
+  rm -f $wpzip
+  chown -R nginx:nginx wordpress
+  if [[ -d /var/www/wordpress ]]; then
+    echo "/var/www/wordpress 存在升级.................."
+    rm -rf /var/www/wordpress/wp-admin /var/www/wordpress/wp-includes
+    mv wordpress/wp-admin /var/www/wordpress
+    mv wordpress/wp-includes /var/www/wordpress
+    mv -f wordpress/*.php /var/www/wordpress
+    rm -rf wordpress
+  else
+    mkdir -p /var/www
+    echo "/var/www/wordpress 不存在 进行安装.................."
+    mv wordpress /var/www/
+  fi
+  ls -alh /var/www/wordpress
+  judge "Wordpress 升级/安装"
+}
+function mysql_install() {
+  ${INS} mysql mysql-server
+  judge "mysql 安装"
+  systemctl restart mysqld && systemctl enable  mysqld
+}
+function mariadb_install() {
+  if [[ "${ID}" == "debian" ]]; then
+    ${INS} mariadb-server mariadb-client
+    judge "mariadb-server mariadb-client 安装"
+  else
+    print_error "mariadb 仅仅支持debian"
+    return
+  fi
+  systemctl restart mariadb && systemctl enable  mariadb
+}
+function mariadb_conf() {
+  echo -e "${Green}1.${Font} 修改root密码"
+  echo -e "${Green}2.${Font} 增加一个数据库"
+  echo -e "${Green}3.${Font} 数据库备份"
+  echo -e "${Green}4.${Font} 数据库恢复"
+  read -rp "请输入：" choose_num
+  case $choose_num in
+  1)
+    read -rp "请输入新密码：" PASSWDROOT
+    mysql -uroot -p -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${PASSWDROOT}'"
+    echo "export PASSWDROOT=${PASSWDROOT}">/etc/profile.d/mysqladdpd.sh
+    ;;
+  2)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    read -rp "请依次输入：数据库名称 用户名 用户密码:" dbname username userpass
+    if [ -z "$dbname" ] || [ -z "$username" ] || [ -z "$userpass" ] ; then
+      print_error "请输入正确：数据库名称 用户名 用户密码"
+      exit 1
+    fi
+    mkdir -p /etc/mysqlpasswd
+    echo "DB_NAME=$dbname">>/etc/mysqlpasswd/$dbname
+    echo "DB_USER=$username">>/etc/mysqlpasswd/$dbname
+    echo "DB_PASSWORD=$userpass">>/etc/mysqlpasswd/$dbname
+    mysql -uroot -p${PASSWDROOT} -e "CREATE DATABASE ${dbname} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+    echo "Creating new user..."
+    mysql -uroot -p${PASSWDROOT} -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpass}';"
+    mysql -uroot -p${PASSWDROOT} -e "GRANT ALL PRIVILEGES ON ${dbname}.* TO '${username}'@'localhost';"
+    mysql -uroot -p${PASSWDROOT} -e "FLUSH PRIVILEGES;"
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    echo "Finished"
+    ;;
+  3)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    read -rp "请输入备份数据库名称：" dbname
+    dumpdate=$(date '+%Y%m%d-%H%M%S')
+    mysqldump -uroot -p${PASSWDROOT} -e "${dbname}">~/${dbname}_${dumpdate}.sql
+    ls -alh ~
+    ;;
+  4)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    ls ~
+    sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
+    read -rp "请输入恢复数据库名称：" dbname
+    mysql -uroot -p${PASSWDROOT} $dbname <~/$sqlname
+    mysql -uroot -p${PASSWDROOT} -e "show tables from $dbname;"
+    ;;
+  *)
+    print_error "请输入正确的数字"
+    ;;
+  esac
 
-elif [[ "$linux_relese" == 'centos' ]]; then
-cat >/tmp/boot/ks.cfg<<EOF
-#platform=x86, AMD64, or Intel EM64T
-firewall --enabled --ssh
-install
-url --url="$LinuxMirror/$DIST/os/$VER/"
-rootpw --iscrypted $myPASSWORD
-auth --useshadow --passalgo=sha512
-firstboot --disable
-lang en_US
-keyboard us
-selinux --disabled
-logging --level=info
-reboot
-text
-unsupported_hardware
-vnc
-skipx
-timezone --isUtc Asia/Hong_Kong
-#ONDHCP network --bootproto=dhcp --onboot=on
-network --bootproto=static --ip=$IPv4 --netmask=$MASK --gateway=$GATE --nameserver=$ipDNS --onboot=on
-bootloader --location=mbr --append="rhgb quiet crashkernel=auto"
-zerombr
-clearpart --all --initlabel 
-autopart
+  systemctl restart mariadb
+}
+function git_install() {
+  ${INS} git
+  useradd git
+  sed -i 's/\/home\/git:.*$/\/home\/git:\/usr\/bin\/git-shell/g' /etc/passwd
+}
+function nginx_config() {
+  wget $githuburl/res/nginx.zip
+  mkdir -p ziptmp
+  rm -f ziptmp/*
+  unzip -d ziptmp  nginx.zip
+  rm -f nginx.zip
+  rm /etc/nginx/conf.d/*.conf
+  read -rp  "是否安装nginx.conf[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
+    judge "nginx.conf 配置文件安装"
+  fi
+  read -rp  "是否安装nextcloud.conf[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
+    read -p  "请输入域名:"  domm
+    rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
+    sed -i "s/server_name .*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
+    sed -i "s/ssl_certificate .*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/nextcloud.conf
+    sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/nextcloud.conf
+    judge "nextcloud.conf 配置文件安装"
+  fi
+  read -rp  "是否安装worpress配置文件[y/n]?"  answer
+  if echo "$answer" | grep -iq "^y" ;then
+    read -rp  "请输入域名:"  domm
+    rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
+    cat ziptmp/wordpress.conf >/etc/nginx/conf.d/${domm}.conf
+    sed -i "s/server_name .*/server_name $domm;/g" /etc/nginx/conf.d/${domm}.conf
+    sed -i "s/ssl_certificate .*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/${domm}.conf
+    sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/${domm}.conf
+    judge "$domm.conf 配置文件安装"
+  fi
+  ls -alh /etc/nginx/conf.d/
+  systemctl restart nginx
+  systemctl status nginx
+}
+function file_down() {
+  echo -e "${Green}$githuburl${Font}"
+  echo -e "${Green}1.${Font} Centos8_Setup.sh"
+  echo -e "${Green}2.${Font} nginx.zip"
+  echo -e "${Green}3.${Font} besttrace"
+  echo -e "${Green}4.${Font} wp-fastest-cache-premium"
+  read -rp "请输入：" choose_num
+  case $choose_num in
+  1)
+    wget $githuburl/Centos8_Setup.sh
+    ;;
+  2)
+    wget $githuburl/res/nginx.zip
+    ;;
+  3)
+    wget $githuburl/res/besttrace
+    chmod +x besttrace
+    ;;
+  4)
+    wget $githuburl/res/wp-fastest-cache-premium_1.6.2.zip
+    ;;
+  *)
+    wget $githuburl/$choose_num
+    ;;
+  esac
 
-%packages
-@base
-%end
+}
+function fastest_cache_premium() {
 
-%post --interpreter=/bin/bash
-rm -rf /root/anaconda-ks.cfg
-rm -rf /root/install.*log
-%end
+  if [[ -d /var/www/wordpress ]]; then
+    rm -r wp-fastest-cache-premium*.zip
+    wget $githuburl/res/wp-fastest-cache-premium_1.6.2.zip
+    unzip wp-fastest-cache-premium_1.6.2.zip
+    rm -rf  /var/www/wordpress/wp-content/plugins/wp-fastest-cache-premium
+    mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins    
+    judge "wp-fastest-cache-premium 安装"
+  else
+    print_error "WordPress 未安装!!!!!!!!!!!!"
+    exit 1
+  fi
 
-EOF
+}
+menu() {
+  is_root
+  system_check
+  echo -e "\t---authored by zhang---"
 
+  echo -e "${Green}1.${Font} 常用工具包安装"
+  echo -e "${Green}2.${Font} ssd_config 配置"
+  echo -e "${Green}3.${Font} 关闭FireWall安装iptables并配置规则"
 
-[[ "$UNKNOWHW" == '1' ]] && sed -i 's/^unsupported_hardware/#unsupported_hardware/g' /tmp/boot/ks.cfg
-[[ "$(echo "$DIST" |grep -o '^[0-9]\{1\}')" == '5' ]] && sed -i '0,/^%end/s//#%end/' /tmp/boot/ks.cfg
-fi
+  echo -e "${Green}4.${Font} BBR开启"
 
-find . | cpio -H newc --create --verbose | gzip -9 > /tmp/initrd.img;
-cp -f /tmp/initrd.img /boot/initrd.img || sudo cp -f /tmp/initrd.img /boot/initrd.img
-cp -f /tmp/vmlinuz /boot/vmlinuz || sudo cp -f /tmp/vmlinuz /boot/vmlinuz
+  echo -e "${Green}5.${Font} NGINX安装"
 
-chown root:root $GRUBDIR/$GRUBFILE
-chmod 444 $GRUBDIR/$GRUBFILE
+  echo -e "${Green}6.${Font} php 安装"
+  echo -e "${Green}7.${Font} php  fpm 修改配置"
 
-if [[ "$loaderMode" == "0" ]]; then
-  sleep 3 && reboot || sudo reboot >/dev/null 2>&1
-else
-  rm -rf "$HOME/loader"
-  mkdir -p "$HOME/loader"
-  cp -rf "/boot/initrd.img" "$HOME/loader/initrd.img"
-  cp -rf "/boot/vmlinuz" "$HOME/loader/vmlinuz"
-  [[ -f "/boot/initrd.img" ]] && rm -rf "/boot/initrd.img"
-  [[ -f "/boot/vmlinuz" ]] && rm -rf "/boot/vmlinuz"
-  echo && ls -AR1 "$HOME/loader"
-fi
+  echo -e "${Green}8.${Font} acme 安装"
+  echo -e "${Green}9.${Font} acme 域名"
 
+  echo -e "${Green}10.${Font} NextCloud安装"
 
+  echo -e "${Green}11.${Font} V2fly安装"
+  echo -e "${Green}12.${Font} mysql安装"
+  echo -e "${Green}13.${Font} git安装"
+  echo -e "${Green}14.${Font} Nginx配置文件下载"
+  echo -e "${Green}15.${Font} MariaDB安装"
+  echo -e "${Green}16.${Font} Wordpress安装/升级"
+
+  echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
+  echo -e "${Green}21.${Font} 执行1-3所有步骤"
+  echo -e "${Green}22.${Font} 执行php安装与配置"
+  echo -e "${Green}23.${Font} acme 整个配置"
+  echo -e "${Green}24.${Font} acme 升级"
+  echo -e "${Green}25.${Font} github文件下载"
+  echo -e "${Green}26.${Font} bench.sh  VPS性能测试"
+  echo -e "${Green}27.${Font} 流媒体解锁测试"
+  echo -e "${Green}28.${Font} 一键DD"
+  echo -e "${Green}29.${Font} MariaDB configure"
+  echo -e "${Green}30.${Font} wp-fastest-cache-premium"
+
+  echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
+  echo -e "${Green}31.${Font} 模块卸载"
+  echo -e "${Green}40.${Font} 退出"
+  read -rp "请输入数字：" menu_num
+  case $menu_num in
+  1)
+    installTools
+    ;;
+  2)
+    sshd
+    ;;
+  3)
+    firewall
+    ;;
+  4)
+    BBR
+    ;;
+  5)
+    nginx_install
+    ;;
+  6)
+    php
+    ;;
+  7)
+    php_fpm
+    ;;
+  8)
+    acme_install
+    ;;
+  9)
+    acme_url
+    ;;
+  10)
+    nc_install
+    ;;
+  11)
+    v2ray_install
+    ;;
+  12)
+    mysql_install
+    ;;
+  13)
+    git_install
+    ;;
+  14)
+    nginx_config
+    ;;
+  15)
+    mariadb_install
+    ;;
+  16)
+    wp_installupdate
+    ;;
+  21)
+    installTools
+    sshd
+    firewall
+    ;;
+  22)
+    php
+    php_fpm
+    ;;
+  23)
+    acme_install
+    acme_url
+    ;;
+  24)
+    "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh"
+    ;;
+  25)
+    file_down
+    ;;
+  26)
+    echo "wget -qO- bench.sh| bash"
+    wget -qO- bench.sh | bash
+    ;;
+  27)
+    wget $githuburl/checkNF.sh
+    bash checkNF.sh
+    ;;
+  28)
+    wget $githuburl/InstallNET.sh
+    bash checkNF.sh
+    ;;
+  29)
+    mariadb_conf
+    ;;
+  30)    
+    fastest_cache_premium
+    ;;
+  31)
+    module_remove
+    ;;
+  40)
+    exit 0
+    ;;
+  *)
+    print_error "请输入正确的数字 $menu_num"
+    ;;
+  esac
+}
+menu "$@"
