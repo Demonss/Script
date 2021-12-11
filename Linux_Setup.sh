@@ -293,14 +293,21 @@ function acme_install() {
 function acme_url() {
   read -rp "your domain:" ROOTD
   .acme.sh/acme.sh --issue --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
-  .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/cert.pem --key-file /etc/ssl/privkey.key
+  .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
+  #Domain更新脚本
+  if [[ -f ${cron_update_file}  ]]; then
+    print_error  "${cron_update_file}  exist  请手动插入以下内容:"
+    echo "/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
+    echo "/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
+    return
+  fi
   cat <<EOF> "${cron_update_file}"
 #!/usr/bin/env bash
 domain = ${ROOTD}
 systemctl stop nginx &> /dev/null
 sleep 1
 "/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
-"/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/cert.pem --key-file /etc/ssl/privkey.key &> /dev/null
+"/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
 sleep 1
 systemctl start nginx &> /dev/null
 EOF
@@ -496,26 +503,32 @@ function nginx_config() {
   read -rp  "是否安装nginx.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
-    judge "nginx.conf 替换"
+    judge "nginx.conf 配置文件安装"
   fi
   read -rp  "是否安装nextcloud.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
     read -p  "请输入域名:"  domm
+    rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
     sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
-    judge "nextcloud.conf 替换"
+    sed -i "s/ssl_certificate.*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/nextcloud.conf
+    sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/nextcloud.conf
+    judge "nextcloud.conf 配置文件安装"
   fi
   read -rp  "是否安装80.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/80.conf >/etc/nginx/conf.d/80.conf
-    judge "80conf 替换"
+    judge "80conf 配置文件安装"
   fi
   read -rp  "是否安装worpress配置文件[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     read -rp  "请输入域名:"  domm
+    rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
     cat ziptmp/wordpress.conf >/etc/nginx/conf.d/${domm}.conf
     sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/${domm}.conf
-    judge "$domm.conf 替换"
+    sed -i "s/ssl_certificate.*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/${domm}.conf
+    sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/${domm}.conf
+    judge "$domm.conf 配置文件安装"
   fi
   ls -alh /etc/nginx/conf.d/
   systemctl restart nginx
@@ -555,8 +568,8 @@ function fastest_cache_premium() {
     wget $githuburl/wp-fastest-cache-premium_1.6.2.zip
     unzip wp-fastest-cache-premium_1.6.2.zip
     rm -rf  /var/www/wordpress/wp-content/plugins/wp-fastest-cache-premium
-	mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins	
-	judge "wp-fastest-cache-premium 安装"
+    mv wp-fastest-cache-premium  /var/www/wordpress/wp-content/plugins    
+    judge "wp-fastest-cache-premium 安装"
   else
     print_error "WordPress 未安装!!!!!!!!!!!!"
     exit 1
@@ -690,7 +703,7 @@ menu() {
   29)
     mariadb_conf
     ;;
-  30)	
+  30)    
     fastest_cache_premium
     ;;
   31)
