@@ -510,7 +510,7 @@ function nginx_config() {
     cat ziptmp/nextcloud.conf >/etc/nginx/conf.d/nextcloud.conf
     read -p  "请输入域名:"  domm
     rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
-    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
+    sed -i "s/server_name .*/server_name $domm;/g" /etc/nginx/conf.d/nextcloud.conf
     sed -i "s/ssl_certificate .*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/nextcloud.conf
     sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/nextcloud.conf
     judge "nextcloud.conf 配置文件安装"
@@ -525,7 +525,7 @@ function nginx_config() {
     read -rp  "请输入域名:"  domm
     rootdomm=$(echo $domm|awk -F . '{ print $(NF-1)"."$NF }')
     cat ziptmp/wordpress.conf >/etc/nginx/conf.d/${domm}.conf
-    sed -i "s/server_name.*/server_name $domm;/g" /etc/nginx/conf.d/${domm}.conf
+    sed -i "s/server_name .*/server_name $domm;/g" /etc/nginx/conf.d/${domm}.conf
     sed -i "s/ssl_certificate .*/ssl_certificate \/etc\/ssl\/${rootdomm}.pem;/g" /etc/nginx/conf.d/${domm}.conf
     sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/${domm}.conf
     judge "$domm.conf 配置文件安装"
