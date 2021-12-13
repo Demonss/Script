@@ -515,11 +515,6 @@ function nginx_config() {
     sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/nextcloud.conf
     judge "nextcloud.conf 配置文件安装"
   fi
-  read -rp  "是否安装80.conf[y/n]?"  answer
-  if echo "$answer" | grep -iq "^y" ;then
-    cat ziptmp/80.conf >/etc/nginx/conf.d/80.conf
-    judge "80conf 配置文件安装"
-  fi
   read -rp  "是否安装worpress配置文件[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     read -rp  "请输入域名:"  domm
