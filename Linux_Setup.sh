@@ -590,26 +590,26 @@ menu() {
   echo -e "${Green}8.${Font} acme 安装"
   echo -e "${Green}9.${Font} acme 域名"
 
-  echo -e "${Green}10.${Font} NextCloud安装"
+  echo -e "${Green}10 a.${Font} NextCloud安装"
 
-  echo -e "${Green}11.${Font} V2fly安装"
-  echo -e "${Green}12.${Font} mysql安装"
-  echo -e "${Green}13.${Font} git安装"
-  echo -e "${Green}14.${Font} Nginx配置文件下载"
-  echo -e "${Green}15.${Font} MariaDB安装"
-  echo -e "${Green}16.${Font} Wordpress安装/升级"
+  echo -e "${Green}11 b.${Font} V2fly安装"
+  echo -e "${Green}12 c.${Font} mysql安装"
+  echo -e "${Green}13 d.${Font} git安装"
+  echo -e "${Green}14 e.${Font} Nginx配置文件下载"
+  echo -e "${Green}15 f.${Font} MariaDB安装"
+  echo -e "${Green}16 g.${Font} Wordpress安装/升级"
 
   echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
-  echo -e "${Green}21.${Font} 执行1-3所有步骤"
-  echo -e "${Green}22.${Font} 执行php安装与配置"
-  echo -e "${Green}23.${Font} acme 整个配置"
-  echo -e "${Green}24.${Font} acme 升级"
-  echo -e "${Green}25.${Font} github文件下载"
-  echo -e "${Green}26.${Font} bench.sh  VPS性能测试"
-  echo -e "${Green}27.${Font} 流媒体解锁测试"
-  echo -e "${Green}28.${Font} 一键DD"
-  echo -e "${Green}29.${Font} MariaDB configure"
-  echo -e "${Green}30.${Font} wp-fastest-cache-premium"
+  echo -e "${Green}21 h.${Font} 执行1-3所有步骤"
+  echo -e "${Green}22 i.${Font} 执行php安装与配置"
+  echo -e "${Green}23 j.${Font} acme 整个配置"
+  echo -e "${Green}24 k.${Font} acme 升级"
+  echo -e "${Green}25 l.${Font} github文件下载"
+  echo -e "${Green}26 m.${Font} bench.sh  VPS性能测试"
+  echo -e "${Green}27 n.${Font} 流媒体解锁测试"
+  echo -e "${Green}28 o.${Font} 一键DD"
+  echo -e "${Green}29 p.${Font} MariaDB configure"
+  echo -e "${Green}30 q.${Font} wp-fastest-cache-premium"
 
   echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
   echo -e "${Green}31.${Font} 模块卸载"
@@ -643,62 +643,62 @@ menu() {
   9)
     acme_url
     ;;
-  10)
+  10|a)
     nc_install
     ;;
-  11)
+  11|b)
     v2ray_install
     ;;
-  12)
+  12|c)
     mysql_install
     ;;
-  13)
+  13|d)
     git_install
     ;;
-  14)
+  14|e)
     nginx_config
     ;;
-  15)
+  15|f)
     mariadb_install
     ;;
-  16)
+  16|g)
     wp_installupdate
     ;;
-  21)
+  21|h)
     installTools
     sshd
     firewall
     ;;
-  22)
+  22|i)
     php
     php_fpm
     ;;
-  23)
+  23|j)
     acme_install
     acme_url
     ;;
-  24)
+  24|k)
     "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh"
     ;;
-  25)
+  25|l)
     file_down
     ;;
-  26)
+  26|m)
     echo "wget -qO- bench.sh| bash"
     wget -qO- bench.sh | bash
     ;;
-  27)
+  27|n)
     wget $githuburl/checkNF.sh
     bash checkNF.sh
     ;;
-  28)
+  28|o)
     wget $githuburl/InstallNET.sh
     bash checkNF.sh
     ;;
-  29)
+  29|p)
     mariadb_conf
     ;;
-  30)    
+  30|q)    
     fastest_cache_premium
     ;;
   31)
