@@ -614,7 +614,11 @@ menu() {
   echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
   echo -e "${Green}31.${Font} 模块卸载"
   echo -e "${Green}40.${Font} 退出"
-  read -rp "请输入数字：" menu_num
+  if [ $# -gt 0 ]; then
+    menu_num=$1
+  else  
+    read -rp "请输入数字：" menu_num
+  fi
   case $menu_num in
   1)
     installTools
