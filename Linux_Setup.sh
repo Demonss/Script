@@ -556,6 +556,11 @@ function file_down() {
   esac
 
 }
+function io_test() {
+  dddd=$(date)
+  ffff=$((LANG=C dd if=/dev/zero of=benchtest bs=64k count=4k conv=fdatasync && rm -f benchtest ) 2>&1 | awk -F, 'END { print $NF }')
+  echo $dddd $ffff >>/root/io_test
+}
 function fastest_cache_premium() {
 
   if [[ -d /var/www/wordpress ]]; then
@@ -572,52 +577,52 @@ function fastest_cache_premium() {
 
 }
 menu() {
-  is_root
-  system_check
-  echo -e "\t---authored by zhang---"
-
-  echo -e "${Green}1.${Font} 常用工具包安装"
-  echo -e "${Green}2.${Font} ssd_config 配置"
-  echo -e "${Green}3.${Font} 关闭FireWall安装iptables并配置规则"
-
-  echo -e "${Green}4.${Font} BBR开启"
-
-  echo -e "${Green}5.${Font} NGINX安装"
-
-  echo -e "${Green}6.${Font} php 安装"
-  echo -e "${Green}7.${Font} php  fpm 修改配置"
-
-  echo -e "${Green}8.${Font} acme 安装"
-  echo -e "${Green}9.${Font} acme 域名"
-
-  echo -e "${Green}10 a.${Font} NextCloud安装"
-
-  echo -e "${Green}11 b.${Font} V2fly安装"
-  echo -e "${Green}12 c.${Font} mysql安装"
-  echo -e "${Green}13 d.${Font} git安装"
-  echo -e "${Green}14 e.${Font} Nginx配置文件下载"
-  echo -e "${Green}15 f.${Font} MariaDB安装"
-  echo -e "${Green}16 g.${Font} Wordpress安装/升级"
-
-  echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
-  echo -e "${Green}21 h.${Font} 执行1-3所有步骤"
-  echo -e "${Green}22 i.${Font} 执行php安装与配置"
-  echo -e "${Green}23 j.${Font} acme 整个配置"
-  echo -e "${Green}24 k.${Font} acme 升级"
-  echo -e "${Green}25 l.${Font} github文件下载"
-  echo -e "${Green}26 m.${Font} bench.sh  VPS性能测试"
-  echo -e "${Green}27 n.${Font} 流媒体解锁测试"
-  echo -e "${Green}28 o.${Font} 一键DD"
-  echo -e "${Green}29 p.${Font} MariaDB configure"
-  echo -e "${Green}30 q.${Font} wp-fastest-cache-premium"
-
-  echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
-  echo -e "${Green}31.${Font} 模块卸载"
-  echo -e "${Green}40.${Font} 退出"
   if [ $# -gt 0 ]; then
     menu_num=$1
-  else  
-    read -rp "请输入数字：" menu_num
+  else
+    is_root
+    system_check
+    echo -e "\t---authored by zhang---"
+    echo -e "${Green}1.${Font} 常用工具包安装"
+    echo -e "${Green}2.${Font} ssd_config 配置"
+    echo -e "${Green}3.${Font} 关闭FireWall安装iptables并配置规则"
+
+    echo -e "${Green}4.${Font} BBR开启"
+
+    echo -e "${Green}5.${Font} NGINX安装"
+
+    echo -e "${Green}6.${Font} php 安装"
+    echo -e "${Green}7.${Font} php  fpm 修改配置"
+
+    echo -e "${Green}8.${Font} acme 安装"
+    echo -e "${Green}9.${Font} acme 域名"
+
+    echo -e "${Green}10 a.${Font} NextCloud安装"
+
+    echo -e "${Green}11 b.${Font} V2fly安装"
+    echo -e "${Green}12 c.${Font} mysql安装"
+    echo -e "${Green}13 d.${Font} git安装"
+    echo -e "${Green}14 e.${Font} Nginx配置文件下载"
+    echo -e "${Green}15 f.${Font} MariaDB安装"
+    echo -e "${Green}16 g.${Font} Wordpress安装/升级"
+
+    echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
+    echo -e "${Green}21 h.${Font} 执行1-3所有步骤"
+    echo -e "${Green}22 i.${Font} 执行php安装与配置"
+    echo -e "${Green}23 j.${Font} acme 整个配置"
+    echo -e "${Green}24 k.${Font} acme 升级"
+    echo -e "${Green}25 l.${Font} github文件下载"
+    echo -e "${Green}26 m.${Font} bench.sh  VPS性能测试"
+    echo -e "${Green}27 n.${Font} 流媒体解锁测试"
+    echo -e "${Green}28 o.${Font} 一键DD"
+    echo -e "${Green}29 p.${Font} MariaDB configure"
+    echo -e "${Green}30 q.${Font} wp-fastest-cache-premium"
+    echo -e "${Green}31 r.${Font} IO 测试"
+
+    echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
+    echo -e "${Green}41.${Font} 模块卸载"
+    echo -e "${Green}40.${Font} 退出"
+      read -rp "请输入数字：" menu_num
   fi
   case $menu_num in
   1)
@@ -705,7 +710,10 @@ menu() {
   30|q)    
     fastest_cache_premium
     ;;
-  31)
+  31|r)    
+    io_test
+    ;;
+  41)
     module_remove
     ;;
   40)
