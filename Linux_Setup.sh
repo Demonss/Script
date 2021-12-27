@@ -558,7 +558,7 @@ function file_down() {
 }
 function io_test() {
   dddd=$(date)
-  ffff=$((LANG=C dd if=/dev/zero of=benchtest bs=64k count=4k conv=fdatasync && rm -f benchtest ) 2>&1 | awk -F, 'END { print $NF }')
+  ffff=$((LANG=C dd if=/dev/zero of=/root/benchtest bs=64k count=4k conv=fdatasync && rm -f /root/benchtest ) 2>&1 | awk -F, 'END { print $NF }')  
   echo $dddd $ffff >>/root/io_test
 }
 function fastest_cache_premium() {
@@ -577,6 +577,7 @@ function fastest_cache_premium() {
 
 }
 menu() {
+  export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
   if [ $# -gt 0 ]; then
     menu_num=$1
   else
