@@ -140,6 +140,7 @@ function installTools() {
   elif [[ "${ID}" == "debian" ]]; then
     ${INS} vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools gnupg2 ca-certificates lsb-release
     judge "vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools gnupg2 ca-certificates lsb-release 安装"
+    sed -i "s/mouse=a/mouse-=a/g" /usr/share/vim/vim*/defaults.vim
   fi
 }
 function php_remove() {
