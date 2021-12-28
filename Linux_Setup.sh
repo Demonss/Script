@@ -559,7 +559,7 @@ function file_down() {
 }
 function io_test() {
   dddd=$(date)
-  ffff=$((LANG=C dd if=/dev/zero of=/root/benchtest bs=64k count=0.1k conv=fdatasync && rm -f /root/benchtest ) 2>&1 | awk -F, 'END { print $NF }')  
+  ffff=$((LANG=C dd if=/dev/zero of=/root/benchtest bs=4k count=1k conv=fdatasync && rm -f /root/benchtest ) 2>&1 | awk -F, 'END { print $NF }')  
   echo $dddd $ffff >>/root/io_test
 }
 function fastest_cache_premium() {
