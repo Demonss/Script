@@ -5,13 +5,13 @@ echo "Shell PID is $$"
 for curpid in $PID_IOtest
 do
   vvlue=$[ $curpid - $$ ] 
-  if [[ $vvlue -ne 1 ]] && [[ $vvlue -ne 0 ]]; then
+  if [ $vvlue -ne 0 -a $vvlue -ne 1 ]; then
     echo "Find Pre PID: $curpid try to  kill......"
     kill $curpid
     brun=1
   fi
 done
-if [[ -z $brun ]];then
+if [ -z $brun ];then
   echo "Starting IO test ..........."
   for (( ; ; ))
   do   
