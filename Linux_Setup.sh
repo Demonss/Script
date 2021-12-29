@@ -536,6 +536,7 @@ function file_down() {
   echo -e "${Green}2.${Font} nginx.zip"
   echo -e "${Green}3.${Font} besttrace"
   echo -e "${Green}4.${Font} wp-fastest-cache-premium"
+  echo -e "${Green}5.${Font} IOTest.sh"
   read -rp "请输入：" choose_num
   case $choose_num in
   1)
@@ -545,11 +546,17 @@ function file_down() {
     wget $githuburl/res/nginx.zip
     ;;
   3)
+    rm -f besttrace
     wget $githuburl/res/besttrace
     chmod +x besttrace
     ;;
   4)
+    rm -f wp-fastest-cache-premium_1.6.2.zip
     wget $githuburl/res/wp-fastest-cache-premium_1.6.2.zip
+    ;;
+  5)
+    rm -f IOTest.sh
+    wget $githuburl/res/IOTest.sh
     ;;
   *)
     wget $githuburl/$choose_num
@@ -559,7 +566,7 @@ function file_down() {
 }
 function io_test() {
   dddd=$(date)
-  ffff=$((LANG=C dd if=/dev/zero of=/root/benchtest bs=4k count=1k conv=fdatasync && rm -f /root/benchtest ) 2>&1 | awk -F, 'END { print $NF }')  
+  ffff=$((LANG=C dd if=/dev/zero of=/root/benchtest bs=64k count=4k conv=fdatasync && rm -f /root/benchtest ) 2>&1 | awk -F, 'END { print $NF }')
   echo $dddd $ffff >>/root/io_test
 }
 function fastest_cache_premium() {
@@ -713,16 +720,6 @@ menu() {
     fastest_cache_premium
     ;;
   31|r)    
-    io_test
-    sleep 5s
-    io_test
-    sleep 5s
-    io_test
-    sleep 5s
-    io_test
-    sleep 5s
-    io_test
-    sleep 5s
     io_test
     ;;
   41)
