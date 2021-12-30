@@ -297,9 +297,9 @@ function acme_url() {
   .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
   #Domain更新脚本
   if [[ -f ${cron_update_file}  ]]; then
-    print_error  "${cron_update_file}  exist  请手动插入以下内容:"
-    echo "/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
-    echo "/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
+    print_error  "${cron_update_file}  exist  请手动插入以下内容到 ${cron_update_file}:"
+    echo "/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD}
+    echo "/root/.acme.sh"/acme.sh --install-cert -d "${domain}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
     return
   fi
   cat <<EOF> "${cron_update_file}"
