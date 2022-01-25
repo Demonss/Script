@@ -385,6 +385,7 @@ function nc_install() {
     chown root:nginx /var/lib/php/opcache
   fi
   chown -R nginx:nginx /var/www/nextcloud
+  rm -rf /var/www/nextcloud/core/skeleton/*
   judge "NextCloud 安装到/var/www/nextcloud"
 }
 function wp_installupdate() {
