@@ -386,6 +386,7 @@ function nc_install() {
   fi
   chown -R nginx:nginx /var/www/nextcloud
   rm -rf /var/www/nextcloud/core/skeleton/*
+  echo "'memcache.local' => '\OC\Memcache\APCu',">/var/www/nextcloud/config/memcacheconfig
   judge "NextCloud 安装到/var/www/nextcloud"
 }
 function wp_installupdate() {
