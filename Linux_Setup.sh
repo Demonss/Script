@@ -431,6 +431,7 @@ function mariadb_conf() {
   echo -e "${Green}2.${Font} 增加一个数据库"
   echo -e "${Green}3.${Font} 数据库备份"
   echo -e "${Green}4.${Font} 数据库恢复"
+  echo -e "${Green}5.${Font} 删除一个数据库"
   read -rp "请输入：" choose_num
   case $choose_num in
   1)
@@ -482,6 +483,15 @@ function mariadb_conf() {
     read -rp "请输入恢复数据库名称：" dbname
     mysql -uroot -p${PASSWDROOT} $dbname <~/$sqlname
     mysql -uroot -p${PASSWDROOT} -e "show tables from $dbname;"
+    ;;
+   5)
+    if [ -z "$PASSWDROOT" ]; then
+      print_error "请先export PASSWDROOT="
+      exit 1
+    fi
+    mysql -uroot -p${PASSWDROOT} -e "show databases;"
+    read -rp "请输入恢复数据库名称：" dbname
+    mysql -uroot -p${PASSWDROOT} drop $dbname
     ;;
   *)
     print_error "请输入正确的数字"
