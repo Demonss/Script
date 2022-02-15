@@ -491,7 +491,7 @@ function mariadb_conf() {
     fi
     mysql -uroot -p${PASSWDROOT} -e "show databases;"
     read -rp "请输入恢复数据库名称：" dbname
-    mysql -uroot -p${PASSWDROOT} drop $dbname
+    mysqladmin drop $dbname -f -uroot -p${PASSWDROOT}
     ;;
   *)
     print_error "请输入正确的数字"
