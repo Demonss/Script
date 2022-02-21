@@ -142,6 +142,7 @@ function installTools() {
     judge "vim net-tools lrzsz zip unzip tar wget vim lrzsz lsof curl net-tools gnupg2 ca-certificates lsb-release 安装"
     sed -i "s/mouse=a/mouse-=a/g" /usr/share/vim/vim*/defaults.vim
   fi
+  touch ~/.vimrc
 }
 function php_remove() {
   if [[ "${ID}" == "centos" ]]; then
