@@ -538,6 +538,7 @@ function nginx_config() {
     sed -i "s/ssl_certificate_key.*/ssl_certificate_key \/etc\/ssl\/${rootdomm}.key;/g" /etc/nginx/conf.d/${domm}.conf
     judge "$domm.conf 配置文件安装"
   fi
+  cat ziptmp/FastCGI.conf >/etc/nginx/conf.d/FastCGI.conf  
   ls -alh /etc/nginx/conf.d/
   systemctl restart nginx
   systemctl status nginx
