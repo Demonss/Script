@@ -294,7 +294,7 @@ function acme_install() {
 
 function acme_url() {
   read -rp "your domain:" ROOTD
-  .acme.sh/acme.sh --issue --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
+  .acme.sh/acme.sh --issue --force --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
   .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
   #Domain更新脚本
   if [[ -f ${cron_update_file}  ]]; then
