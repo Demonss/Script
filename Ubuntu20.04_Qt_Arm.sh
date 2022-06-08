@@ -135,6 +135,18 @@ EOF
   systemctl start smbd
 
 }
+function nfs_install() {
+  ${INS} nfs-kernel-server nfs-common
+  mkdir /samba 
+  chmod 777 /samba 
+  
+  echo "/samba  *(rw,sync,no_root_squash)" >>/etc/exports
+  systemctl enable nfs-kernel-server
+  /etc/init.d/nfs-kernel-server restart
+  showmount -e
+  judge "mount -t nfs -o nolock,nfsvers=3 192.168.1.251:/home/samba  /opt/nfs"
+
+}
 
 function Snap_rm() {
   apt autoremove --purge snapd
@@ -154,6 +166,7 @@ menu() {
     echo -e "${Green}3.${Font} apt 配置"
 
     echo -e "${Green}4.${Font} samba开启"
+	echo -e "${Green}5.${Font} nfs开启"
 
 
     read -rp "请输入数字：" menu_num
@@ -170,6 +183,9 @@ menu() {
     ;;
   4)
     samba_install
+    ;;
+  5)
+    nfs_install
     ;;
 
   41)
