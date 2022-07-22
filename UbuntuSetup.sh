@@ -179,8 +179,7 @@ function nfs_install() {
 
 }
 function limitlogsize() {
-  echo "SystemMaxUse=10M">>/etc/systemd/journald.conf
-  echo "SystemMaxFileSize=10M">>/etc/systemd/journald.conf
+  echo -e "SystemMaxUse=50M\nSystemMaxFileSize=10M" >>/etc/systemd/journald.conf
 }
 function Snap_rm() {
   apt autoremove --purge snapd
