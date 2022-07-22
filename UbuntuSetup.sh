@@ -178,7 +178,10 @@ function nfs_install() {
   judge "mount -t nfs -o nolock,nfsvers=3 192.168.1.251:/home/samba  /opt/nfs"
 
 }
-
+function limitlogsize() {
+  echo "SystemMaxUse=10M">>/etc/systemd/journald.conf
+  echo "SystemMaxFileSize=10M">>/etc/systemd/journald.conf
+}
 function Snap_rm() {
   apt autoremove --purge snapd
 }
@@ -195,9 +198,9 @@ menu() {
     echo -e "${Green}1.${Font} 常用工具包安装"
     echo -e "${Green}2.${Font} ssh,登录 允许root"
     echo -e "${Green}3.${Font} apt 配置"
-
     echo -e "${Green}4.${Font} samba开启"
-	echo -e "${Green}5.${Font} nfs开启"
+    echo -e "${Green}5.${Font} nfs开启"
+    echo -e "${Green}6.${Font} 限制log文件大小"
 
 
     read -rp "请输入数字：" menu_num
@@ -217,6 +220,9 @@ menu() {
     ;;
   5)
     nfs_install
+    ;;
+  6)
+    limitlogsize
     ;;
 
   41)
