@@ -307,8 +307,8 @@ function acme_url() {
 #!/usr/bin/env bash
 systemctl stop nginx &> /dev/null
 sleep 1
-"/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /dev/null
-"/root/.acme.sh"/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /dev/null
+"/root/.acme.sh"/acme.sh --issue --dns dns_cf  -d ${ROOTD} -d *.${ROOTD} &> /var/log/${ROOTD}.acme.log
+"/root/.acme.sh"/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key &> /var/log/${ROOTD}.acme.log
 sleep 1
 systemctl start nginx &> /dev/null
 EOF
