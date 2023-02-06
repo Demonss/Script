@@ -560,7 +560,7 @@ function wp_autobackup() {
   mysql -uroot -p${PASSWDROOT} -e "show databases;"
   sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
   read -rp "数据库列表：" dbname
-  echo "${date +'%S'} 3 * * 2 bash /usr/bin/mysqlbackup.sh ${PASSWDROOT} ${dbname}">>${CRONF}
+  echo "$(date +'%S') 3 * * 2 bash /usr/bin/mysqlbackup.sh ${PASSWDROOT} ${dbname}">>${CRONF}
   systemctl restart ${CRONCMD} && systemctl enable ${CRONCMD}
 }
 function file_down() {
