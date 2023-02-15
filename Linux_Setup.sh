@@ -480,8 +480,8 @@ function mariadb_conf() {
     fi
     mysql -uroot -p${PASSWDROOT} -e "show databases;"
     ls ~
-    sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
-    read -rp "请输入恢复数据库名称：" dbname
+    #sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
+    read -rp "请输入 恢复数据库名称 Sql文件：" dbname sqlname
     mysql -uroot -p${PASSWDROOT} $dbname <~/$sqlname
     mysql -uroot -p${PASSWDROOT} -e "show tables from $dbname;"
     ;;
