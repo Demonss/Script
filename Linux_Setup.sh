@@ -700,11 +700,11 @@ function fastest_cache_premium() {
 }
 menu() {
   export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+  is_root
+  system_check
   if [ $# -gt 0 ]; then
     menu_num=$1
   else
-    is_root
-    system_check
     echo -e "\t---authored by zhang---"
     echo -e "${Green}1.${Font} 常用工具包安装"
     echo -e "${Green}2.${Font} ssd_config 配置"
