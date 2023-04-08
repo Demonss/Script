@@ -461,6 +461,7 @@ function wp_modifiedLogin() {
   sed -i s/${WPLOGINCUR}/${WPLOGINNEW}/g ${WPLOGINNEW}
   systemctl restart nginx php7.4-fpm
   judge "new login php ${WPLOGINNEW}"
+  echo "if you use fail2ban please replace /etc/fail2ban/filter.d/wordpress.conf"
 }
 function mariadb_conf() {
   echo -e "${Green}1.${Font} 修改root密码"
