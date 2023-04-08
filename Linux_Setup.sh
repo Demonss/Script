@@ -12,6 +12,7 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 cron_update_file="/usr/bin/cron_update.sh"
 mysql_autoupdate_sh="/usr/bin/mysqlbackup.sh"
+WordPressRoot="/var/www/wordpress"
 githuburl=https://github.com/Demonss/Script/raw/main
 
 function print_ok() {
@@ -435,6 +436,32 @@ function mariadb_install() {
   fi
   systemctl restart mariadb && systemctl enable  mariadb
 }
+function wp_modifiedLogin() {  
+  read -rp "请输入现在的登录php名字(wp-login):" WPLOGINCUR
+  if [ -z "$WPLOGINCUR" ] ; then
+    WPLOGINCUR="wp-login.php"
+  fi
+  if [[ $WPLOGINCUR != *php ]]; then
+    WPLOGINCUR=${WPLOGINCUR}.php
+  fi
+  cd $WordPressRoot
+  if [ ! -f "${WPLOGINCUR}" ]; then
+    print_error "${WordPressRoot}/${WPLOGINCUR} 不存在！！！"
+	return
+  fi
+  echo "old login php name: ${WPLOGINCUR}"
+  read -rp "请输入新的登录php名字:" WPLOGINNEW
+  if [[ $WPLOGINNEW != *php ]]; then
+    WPLOGINNEW=${WPLOGINNEW}.php
+  fi
+  echo "New login php name: ${WPLOGINNEW}"
+  cp -a wp-includes/general-template.php wp-includes/general-templatebak.php
+  sed -i s/${WPLOGINCUR}/${WPLOGINNEW}/g wp-includes/general-template.php
+  mv ${WPLOGINCUR} ${WPLOGINNEW}
+  sed -i s/${WPLOGINCUR}/${WPLOGINNEW}/g ${WPLOGINNEW}
+  systemctl restart nginx php7.4-fpm
+  judge "new login php ${WPLOGINNEW}"
+}
 function mariadb_conf() {
   echo -e "${Green}1.${Font} 修改root密码"
   echo -e "${Green}2.${Font} 增加一个数据库"
@@ -720,28 +747,28 @@ menu() {
     echo -e "${Green}8.${Font} acme 安装"
     echo -e "${Green}9.${Font} acme 域名"
 
-    echo -e "${Green}10 a.${Font} NextCloud安装"
-
-    echo -e "${Green}11 b.${Font} V2fly安装"
-    echo -e "${Green}12 c.${Font} mysql安装"
-    echo -e "${Green}13 d.${Font} git安装"
-    echo -e "${Green}14 e.${Font} Nginx配置文件下载"
-    echo -e "${Green}15 f.${Font} MariaDB安装"
-    echo -e "${Green}16 g.${Font} Wordpress安装/升级"
-    echo -e "${Green}17 t.${Font} Wordpress数据库自动备份"
+    echo -e "${Green}10.${Font} NextCloud安装"
+    echo -e "${Green}11.${Font} V2fly安装"
+    echo -e "${Green}12.${Font} mysql安装"
+    echo -e "${Green}13.${Font} git安装"
+    echo -e "${Green}14.${Font} Nginx配置文件下载"
+    echo -e "${Green}15.${Font} MariaDB安装"
+    echo -e "${Green}16.${Font} Wordpress安装/升级"
+    echo -e "${Green}17.${Font} Wordpress数据库自动备份"
+	echo -e "${Green}18.${Font} Wordpress修改登录php"
 
     echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
-    echo -e "${Green}21 h.${Font} 执行1-3所有步骤"
-    echo -e "${Green}22 i.${Font} 执行php安装与配置"
-    echo -e "${Green}23 j.${Font} acme 整个配置"
-    echo -e "${Green}24 k.${Font} acme 升级"
-    echo -e "${Green}25 l.${Font} github文件下载"
-    echo -e "${Green}26 m.${Font} bench.sh  VPS性能测试"
-    echo -e "${Green}27 n.${Font} 流媒体解锁测试"
-    echo -e "${Green}28 o.${Font} 一键DD"
-    echo -e "${Green}29 p.${Font} MariaDB configure"
-    echo -e "${Green}30 q.${Font} wp-fastest-cache-premium"
-    echo -e "${Green}31 r.${Font} IO 测试"
+    echo -e "${Green}21.${Font} 执行1-3所有步骤"
+    echo -e "${Green}22.${Font} 执行php安装与配置"
+    echo -e "${Green}23.${Font} acme 整个配置"
+    echo -e "${Green}24.${Font} acme 升级"
+    echo -e "${Green}25.${Font} github文件下载"
+    echo -e "${Green}26.${Font} bench.sh  VPS性能测试"
+    echo -e "${Green}27.${Font} 流媒体解锁测试"
+    echo -e "${Green}28.${Font} 一键DD"
+    echo -e "${Green}29.${Font} MariaDB configure"
+    echo -e "${Green}30.${Font} wp-fastest-cache-premium"
+    echo -e "${Green}31.${Font} IO 测试"
 
     echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
     echo -e "${Green}41.${Font} 模块卸载"
@@ -776,68 +803,71 @@ menu() {
   9)
     acme_url
     ;;
-  10|a)
+  10)
     nc_install
     ;;
-  11|b)
+  11)
     v2ray_install
     ;;
-  12|c)
+  12)
     mysql_install
     ;;
-  13|d)
+  13)
     git_install
     ;;
-  14|e)
+  14)
     nginx_config
     ;;
-  15|f)
+  15)
     mariadb_install
     ;;
-  16|g)
+  16)
     wp_installupdate
     ;;
-  17|t)
+  17)
     wp_autobackup
     ;;
-  21|h)
+  18)
+    wp_modifiedLogin
+    ;;
+  21)
     installTools
     sshd
     firewall
     ;;
-  22|i)
+  22)
     php
     php_fpm
     ;;
-  23|j)
+  23)
     acme_install
     acme_url
     ;;
-  24|k)
+  24)
     "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh"
     ;;
-  25|l)
+  25)
     file_down
     ;;
-  26|m)
+  26)
     echo "wget -qO- bench.sh| bash"
     wget -qO- bench.sh | bash
     ;;
-  27|n)
+  27)
     wget $githuburl/checkNF.sh
     bash checkNF.sh
     ;;
-  28|o)
+  28)
     wget $githuburl/InstallNET.sh
     bash checkNF.sh
     ;;
-  29|p)
+  29)
     mariadb_conf
     ;;
-  30|q)    
+  30)    
     fastest_cache_premium
     ;;
-  31|r)    
+  31)    
     io_test
     ;;
   41)
