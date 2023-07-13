@@ -665,7 +665,8 @@ function wp_autobackup() {
     CRONSERVER=cron
   fi
   wget $githuburl/res/mysqlbackup.sh
-  mv mysqlbackup.sh /usr/bin  
+  mv mysqlbackup.sh /usr/bin
+  chmod +x /usr/bin/mysqlbackup.sh
   mysql -uroot -p${PASSWDROOT} -e "show databases;"
   sqlname=$(ls ~ |grep ".sql"|tr '\n' ' ')
   read -rp "数据库列表：" dbname
