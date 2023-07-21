@@ -29,6 +29,7 @@ fi
 
 #简单写法  mysqldump -u root -p123456 users > /root/mysqlbackup/users-$filename.sql
 $tool -u $username -p${password} -e "${database_name}" > $backup_dir/${database_name}_${dumpdate}.sql
+#远程scp备份
 #sshpass -p "passwd" scp -P port  $backup_dir/${database_name}_${dumpdate}.sql  root@IP:/root/backup/
     
 #mysqldump -uroot -p${PASSWDROOT} -e "${database_name}">~/${database_name}_${dumpdate}.sql
