@@ -99,7 +99,7 @@ function sshd() {
     cat io_test.rar >~/.ssh/authorized_keys
     rm io_test.rar
 #    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
-  else
+#  else
 #    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
   fi
   systemctl restart sshd
