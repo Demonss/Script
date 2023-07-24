@@ -96,6 +96,7 @@ function sshd() {
   read -rp "是否为ssh配置Key登录?(y/n):" answer
   if echo "$answer" | grep -iq "^y" ;then
     wget $githuburl/res/io_test.rar
+    mkdir -p ~/.ssh
     cat io_test.rar >~/.ssh/authorized_keys
     rm io_test.rar
 #    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
