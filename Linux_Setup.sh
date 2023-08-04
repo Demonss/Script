@@ -626,8 +626,10 @@ EOF
 }
 function git_install() {
   ${INS} git
-  useradd git
-  sed -i 's/\/home\/git:.*$/\/home\/git:\/usr\/bin\/git-shell/g' /etc/passwd
+  read -rp  "请输入git用户名:"  gituser
+  useradd $gituser
+  mkdir -p /home/$gituser
+  sed -i 's/\/home\/"$gituser":.*$/\/home\/"$gituser":\/usr\/bin\/git-shell/g' /etc/passwd
 }
 function nginx_config() {
   wget $githuburl/res/nginx.zip
@@ -766,12 +768,12 @@ menu() {
     echo -e "${Green}10.${Font} NextCloud安装"
     echo -e "${Green}11.${Font} V2fly安装"
     echo -e "${Green}12.${Font} mysql安装"
-    echo -e "${Green}13.${Font} git安装"
+    echo -e "${Green}13.${Font} git安装增加用户"
     echo -e "${Green}14.${Font} Nginx配置文件下载"
     echo -e "${Green}15.${Font} MariaDB安装"
     echo -e "${Green}16.${Font} Wordpress安装/升级"
     echo -e "${Green}17.${Font} Wordpress数据库自动备份"
-	echo -e "${Green}18.${Font} Wordpress修改登录php"
+    echo -e "${Green}18.${Font} Wordpress修改登录php"
 
     echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
     echo -e "${Green}21.${Font} 执行1-3所有步骤"
