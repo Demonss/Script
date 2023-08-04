@@ -629,6 +629,7 @@ function git_install() {
   read -rp  "请输入git用户名:"  gituser
   useradd $gituser
   mkdir -p /home/$gituser
+  chown -R $gituser:$gituser /home/$gituser
   sed -i 's/\/home\/"$gituser":.*$/\/home\/"$gituser":\/usr\/bin\/git-shell/g' /etc/passwd
 }
 function nginx_config() {
