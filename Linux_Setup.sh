@@ -633,6 +633,35 @@ function git_install() {
   chown -R $gituser:$gituser /home/$gituser
   sed -i 's/\/home\/"$gituser":.*$/\/home\/"$gituser":\/usr\/bin\/git-shell/g' /etc/passwd
 }
+function fail2banInstall() {
+  ${INS} fail2ban
+  read -rp "请输入wp登录php(wp-login)：" loginphp
+  if [ -z "$loginphp" ] ; then
+    loginphp=wp-login
+  fi
+  if [[ $loginphp != *php ]]; then
+    loginphp=${loginphp}.php
+  fi
+  cat <<"EOF"> /etc/fail2ban/jail.d/wordpress.conf
+[wordpress]
+enabled = true
+filter = wordpress
+action = iptables-allports[name=all,blocktype=DROP]
+logpath = /var/log/nginx/access.log
+maxretry = 3
+findtime = 120
+bantime = 3600
+usedns = no
+EOF
+  cat <<"EOF"> /etc/fail2ban/filter.d/wordpress.conf
+[Definition]
+failregex = ^<HOST> .* "(GET|POST) /+${loginphp}
+            ^<HOST> .* "(GET|POST).*" (404|444|403|400) .*$
+EOF
+  systemctl restart fail2ban
+  systemctl enable fail2ban
+  systemctl status fail2ban
+}
 function nginx_config() {
   wget $githuburl/res/nginx.zip
   mkdir -p ziptmp
@@ -776,6 +805,7 @@ menu() {
     echo -e "${Green}16.${Font} Wordpress安装/升级"
     echo -e "${Green}17.${Font} Wordpress数据库自动备份"
     echo -e "${Green}18.${Font} Wordpress修改登录php"
+    echo -e "${Green}19.${Font} Fail2ban安装保护WP"
 
     echo -e "${Green}~~~~~~~~~~~组合命令~~~~~~~~~~~${Font}"
     echo -e "${Green}21.${Font} 执行1-3所有步骤"
@@ -793,7 +823,7 @@ menu() {
     echo -e "${Green}~~~~~~~~~~~卸载相关~~~~~~~~~~~${Font}"
     echo -e "${Green}41.${Font} 模块卸载"
     echo -e "${Green}40.${Font} 退出"
-      read -rp "请输入数字：" menu_num
+    read -rp "请输入数字：" menu_num
   fi
   case $menu_num in
   1)
@@ -849,6 +879,9 @@ menu() {
     ;;
   18)
     wp_modifiedLogin
+    ;;
+  19)
+    fail2banInstall
     ;;
   21)
     installTools
