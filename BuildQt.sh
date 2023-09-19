@@ -31,31 +31,16 @@ function judge() {
 }
 function system_check() {
   source '/etc/os-release'
-  if [[ "${ID}" == "centos" && ${VERSION_ID} -ge 7 ]]; then
-    print_ok "当前系统为 Centos ${VERSION_ID} ${VERSION}"
+  if [[ "${ID}" == "centos" ]]; then
     INS="yum install -y"
-    #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
-  elif [[ "${ID}" == "ol" ]]; then
-    print_ok "当前系统为 Oracle Linux ${VERSION_ID} ${VERSION}"
-    INS="yum install -y"
-    print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
-    exit 1
-    #wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
-  elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 9 ]]; then
-    print_ok "当前系统为 Debian ${VERSION_ID} ${VERSION}"
+  elif [[ "${ID}" == "debian" ]]; then
     INS="apt install -y"
-    #apt update
-  elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 18 ]]; then
-    print_ok "当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME}"
+  elif [[ "${ID}" == "ubuntu" ]]; then
     INS="apt install -y"
   else
     print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
     exit 1
   fi
-  if [[ $(grep "nogroup" /etc/group) ]]; then
-    cert_group="nogroup"
-  fi
-
 }
 function installDep() {
   ${INS} python3 python-is-python3 lsb-core lib32stdc++6  g++  
@@ -71,7 +56,7 @@ cat <<EOF>${FILENAME}
 -shared \\
 -xplatform linux-arm-gnueabi-g++ \\
 -optimized-qmake \\
---rpath=no \\
+-no-rpath \\
 -pch \\
 -skip qt3d \\
 -skip qtactiveqt \\
@@ -164,14 +149,14 @@ menu() {
     echo -e "${Green}1.${Font} 安装Qt5.5.1 autoconfig脚本"
     echo -e "${Green}2.${Font} 安装Qt编译依赖项"
     echo -e "${Green}3.${Font} 添加mkspec"
-	echo -e "${Green}4.${Font} make"
+    echo -e "${Green}4.${Font} make"
     read -rp "请输入数字：" menu_num
   fi
   case $menu_num in
   1)
     qt551Autoconfig
     ;;
-  2)    
+  2)
     installDep
     ;;
   3)
@@ -186,4 +171,3 @@ menu() {
   esac
 }
 menu "$@"
-
