@@ -140,6 +140,11 @@ EOF
 function mkqt() {
   make -j $(nproc --all) 2>&1 |tee logMake$( date '+%m%d%H%M' ).log
 }
+function patchqt() {
+  FBDIR=${QT551ROOT}/qtbase/src/plugins/platforms/linuxfb
+  read -rp  "输入打包文件路径:" FILENAME
+  patch -p1 -d ${FBDIR} <${FILENAME}
+}
 menu() {
   system_check
   if [ $# -gt 0 ]; then
@@ -150,6 +155,7 @@ menu() {
     echo -e "${Green}2.${Font} 安装Qt编译依赖项"
     echo -e "${Green}3.${Font} 添加mkspec"
     echo -e "${Green}4.${Font} make"
+    echo -e "${Green}5.${Font} FB支持旋转打包"
     read -rp "请输入数字：" menu_num
   fi
   case $menu_num in
@@ -164,6 +170,9 @@ menu() {
     ;;
   4)
     mkqt
+    ;;
+  5)
+    patchqt
     ;;
   *)
     qt551Autoconfig
