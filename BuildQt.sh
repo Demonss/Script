@@ -10,8 +10,8 @@ RedBG="\033[41;37m"
 OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
-QT551ROOT=${PWD}
-QT551ARM_QMAKE=${QT551ROOT}/qtbase/mkspecs/linux-arm-gnueabi-g++/qmake.conf
+QtRoot=${PWD}
+QTARM_QMAKE=${QtRoot}/qtbase/mkspecs/linux-arm-gnueabi-g++/qmake.conf
 
 
 function print_ok() {
@@ -46,9 +46,9 @@ function installDep() {
   ${INS} python3 python-is-python3 lsb-core lib32stdc++6  g++  
 }
 function qt551Autoconfig() {
-  FILENAME=${QT551ROOT}/autoconfigQt551.sh
+  FILENAME=${QtRoot}/autoconfig.sh
 cat <<EOF>${FILENAME}
-./configure -prefix ${QT551ROOT}/arm-qt -v \\
+./configure -prefix ${QtRoot}/arm-qt -v \\
 -opensource \\
 -confirm-license \\
 -release \\
@@ -104,9 +104,80 @@ EOF
     sed -i "s|-no-tslib|-tslib -I${tslibroot}/include -L${tslibroot}/lib|g" ${FILENAME}
     judge "${FILENAME} 添加tslib支持"
   fi
+function qt5129Autoconfig() {
+  FILENAME=${QtRoot}/autoconfig.sh
+cat <<EOF>${FILENAME}
+./configure -prefix ${QtRoot}/arm-qt -v \\
+-opensource \\
+-confirm-license \\
+-release \\
+-strip \\
+-shared \\
+-xplatform linux-arm-gnueabi-g++ \\
+-optimized-qmake \\
+-c++std c++11 \\
+--rpath=no \\
+-pch \\
+-skip qt3d \\
+-skip qtactiveqt \\
+-skip qtandroidextras \\
+-skip qtcanvas3d \\
+-skip qtconnectivity \\
+-skip qtdatavis3d \\
+-skip qtdoc \\
+-skip qtgamepad \\
+-skip qtlocation \\
+-skip qtmacextras \\
+-skip qtnetworkauth \\
+-skip qtpurchasing \\
+-skip qtremoteobjects \\
+-skip qtscript \\
+-skip qtscxml \\
+-skip qtsensors \\
+-skip qtspeech \\
+-skip qtsvg \\
+-skip qttools \\
+-skip qttranslations \\
+-skip qtwayland \\
+-skip qtwebengine \\
+-skip qtwebview \\
+-skip qtwinextras \\
+-skip qtx11extras \\
+-skip qtxmlpatterns \\
+-make libs \\
+-make examples \\
+-nomake tools -nomake tests \\
+-gui \\
+-widgets \\
+-dbus-runtime \\
+--glib=no \\
+--iconv=no \\
+--pcre=qt \\
+--zlib=qt \\
+-no-openssl \\
+--freetype=qt \\
+--harfbuzz=qt \\
+-no-opengl \\
+-linuxfb \\
+--xcb=no \\
+-tslib \\
+--libpng=qt \\
+--libjpeg=qt \\
+--sqlite=qt \\
+-plugin-sql-sqlite \\
+-no-tslib \\
+2>&1 |tee logAutoconfig\$( date '+%m%d%H%M' ).log
+EOF
+  chmod +x ${FILENAME}
+  read -rp  "是否支持tslib[y/n]?" answer
+  if echo "$answer" | grep -iq "^y" ;then
+    read -rp  "输入tslib根目录:" tslibroot
+    sed -i "s|-no-tslib|-tslib -I${tslibroot}/include -L${tslibroot}/lib|g" ${FILENAME}
+    judge "${FILENAME} 添加tslib支持"
+  fi
 }
 function mkspec() {
-  FILENAME=${QT551ROOT}/qtbase/mkspecs/linux-arm-gnueabi-g++/qmake.conf  
+  FILENAME=${QtRoot}/qtbase/mkspecs/linux-arm-gnueabi-g++/qmake.conf  
   read -rp "请输入交叉编译器bin目录[/opt/zlg_arm_linux/bin]:" NXPTOOLCHAIN
   if [ -z "$NXPTOOLCHAIN" ] ; then
     NXPTOOLCHAIN=/opt/zlg_arm_linux/bin
@@ -141,7 +212,7 @@ function mkqt() {
   make -j $(nproc --all) 2>&1 |tee logMake$( date '+%m%d%H%M' ).log
 }
 function patchqt() {
-  FBDIR=${QT551ROOT}/qtbase/src/plugins/platforms/linuxfb
+  FBDIR=${QtRoot}/qtbase/src/plugins/platforms/linuxfb
   read -rp  "输入打包文件路径:" FILENAME
   patch -p1 -d ${FBDIR} <${FILENAME}
 }
@@ -156,6 +227,7 @@ menu() {
     echo -e "${Green}3.${Font} 添加mkspec"
     echo -e "${Green}4.${Font} make"
     echo -e "${Green}5.${Font} FB支持旋转打包"
+	echo -e "${Green}6.${Font} 安装Qt5.12.9 autoconfig脚本"
     read -rp "请输入数字：" menu_num
   fi
   case $menu_num in
@@ -173,6 +245,9 @@ menu() {
     ;;
   5)
     patchqt
+    ;;
+  6)
+    qt5129Autoconfig
     ;;
   *)
     qt551Autoconfig
