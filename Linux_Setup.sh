@@ -316,6 +316,32 @@ function acme_install() {
 }
 
 function acme_url() {
+  echo -e "${Green}1.${Font} 切换 Let’s Encrypt"
+  echo -e "${Green}2.${Font} 切换 Buypass"
+  echo -e "${Green}3.${Font} 切换 ZeroSSL"
+  echo -e "${Green}4.${Font} 切换 SSL.com"
+  echo -e "${Green}5.${Font} 切换 Google Public CA"
+  read -rp "请输入：" choose_num
+  case $choose_num in
+  1)
+    CA_SERVER="letsencrypt"
+    ;;
+  2)
+    CA_SERVER="buypass"
+    ;;
+  3)
+    CA_SERVER="zerossl"
+    ;;
+  4)
+    CA_SERVER="ssl.com"
+    ;;
+  5)
+    CA_SERVER="google"
+    ;;
+  esac
+  if [ $CA_SERVER ]; then
+    "/root/.acme.sh"/acme.sh --set-default-ca --server $CA_SERVER
+  fi
   read -rp "your domain:" ROOTD
   .acme.sh/acme.sh --issue --force --dns dns_cf -d "${ROOTD}" -d "*.${ROOTD}"
   .acme.sh/acme.sh --install-cert -d "${ROOTD}" --fullchain-file /etc/ssl/${ROOTD}.pem --key-file /etc/ssl/${ROOTD}.key
