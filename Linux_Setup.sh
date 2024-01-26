@@ -99,6 +99,10 @@ function sshd() {
     mkdir -p ~/.ssh
     cat io_test.rar >~/.ssh/authorized_keys
     rm io_test.rar
+    read -rp "已经配置了key登陆是否禁用密码登陆?(y/n):" answer
+    if echo "$answer" | grep -iq "^y" ;then
+      sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+    fi
 #    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
 #  else
 #    sed -i 's/^.\? *PasswordAuthentication.*$/PasswordAuthentication yes/g' /etc/ssh/sshd_config
