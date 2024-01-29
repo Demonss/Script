@@ -12,6 +12,7 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 cron_update_file="/usr/bin/cron_update.sh"
 mysql_autoupdate_sh="/usr/bin/mysqlbackup.sh"
+
 WordPressRoot="/var/www/wordpress"
 githuburl=https://github.com/Demonss/Script/raw/main
 
@@ -643,7 +644,8 @@ then
   echo "delete $delfile" >> $backup_dir/log.txt
 fi
 EOF
-    echo "$(rand 0 59) $(rand 0 3) * * $(rand 1 6) bash ${mysql_autoupdate_sh} ${PASSWDROOT} ${dbname}">>${CRONF}
+    echo "$(rand 0 59) $(rand 0 3) * * $(rand 1 6) ${mysql_autoupdate_sh} ${PASSWDROOT} ${dbname}">>${CRONF}
+    chmod +x ${mysql_autoupdate_sh}
     ${CRONCMD} -l
     print_ok "已经创建备份任务，默认是一星期一次"
     ;;
