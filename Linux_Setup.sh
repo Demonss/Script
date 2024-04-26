@@ -492,7 +492,7 @@ function wp_modifiedLogin() {
   cd $WordPressRoot
   if [ ! -f "${WPLOGINCUR}" ]; then
     print_error "${WordPressRoot}/${WPLOGINCUR} 不存在！！！"
-	return
+    return
   fi
   echo "old login php name: ${WPLOGINCUR}"
   read -rp "请输入新的登录php名字:" WPLOGINNEW
@@ -704,6 +704,9 @@ function nginx_config() {
   read -rp  "是否安装nginx.conf[y/n]?"  answer
   if echo "$answer" | grep -iq "^y" ;then
     cat ziptmp/nginx.conf >/etc/nginx/nginx.conf
+    mv ziptmp/ipblock.conf /etc/nginx/conf.d/
+    mkdir -p /etc/ssl
+    mv ziptmp/fake.* /etc/ssl/
     judge "nginx.conf 配置文件安装"
   fi
   read -rp  "是否安装nextcloud.conf[y/n]?"  answer
